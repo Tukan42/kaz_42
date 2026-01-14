@@ -45,116 +45,13 @@ function showBalanceLog(amount) {
     document.body.appendChild(el); setTimeout(() => el.remove(), 1000);
 }
 function addBalance() { const val = parseInt(document.getElementById('add-balance-input').value); if(val>0){balance+=val; updateBalanceUI(); showBalanceLog(val); document.getElementById('add-balance-input').value = '';}}
-function adjustBet(id, amt) { let el = document.getElementById(id); let val = parseInt(el.value)||0; val+=amt; if(val>balance) val=balance; el.value=val; if(id==='limbo') updateLimboCalc(); }
-function setMaxBet(id) { document.getElementById(id).value = balance; if(id==='limbo') updateLimboCalc(); }
+function adjustBet(id, amt) { let el = document.getElementById(id); let val = parseInt(el.value)||0; val+=amt; if(val>balance) val=balance; el.value=val; }
+function setMaxBet(id) { document.getElementById(id).value = balance; }
 function getBet(id) { const val = parseInt(document.getElementById(id).value); if(isNaN(val)||val<=0){alert('Invalid bet');return null;} if(val>balance){alert('Funds low');return null;} return val; }
 function updateStats(win) { stats.games++; if(win) stats.wins++; else stats.losses++; document.getElementById('stat-total').innerText=stats.games; document.getElementById('stat-wins').innerText=stats.wins; document.getElementById('stat-losses').innerText=stats.losses; }
 
-/* ================= HI-LO ================= */
-const suits = ['♠', '♥', '♦', '♣'];
-const ranks = {11:'J', 12:'Q', 13:'K', 14:'A'};
-let currentCard = null, hiloBet = 0, hiloPot = 0;
-
-function getCardHTML(val, suit) {
-    let rank = ranks[val] || val;
-    let color = (suit === '♥' || suit === '♦') ? 'red' : 'black';
-    return `<div class="card ${color}"><div>${rank}</div><div style="font-size:40px">${suit}</div></div>`;
-}
-function startHiLo() {
-    if(isGameActive) return;
-    const bet = getBet('bet-hilo'); if(!bet) return;
-    hiloBet = bet; hiloPot = bet;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true;
-    
-    currentCard = { val: Math.floor(Math.random()*13)+2, suit: suits[Math.floor(Math.random()*4)] };
-    document.getElementById('hilo-card').innerHTML = getCardHTML(currentCard.val, currentCard.suit);
-    document.getElementById('hilo-history').innerHTML = '';
-    document.getElementById('hilo-info').innerText = "Make a choice";
-    document.getElementById('hilo-info').style.color = "#FFD700";
-    
-    document.getElementById('btn-hilo-start').style.display = 'none';
-    document.getElementById('hilo-controls').style.display = 'block';
-    updateHiLoRates();
-}
-function updateHiLoRates() {
-    let total = 52; let lower = (currentCard.val - 2) * 4; let higher = (14 - currentCard.val) * 4;
-    let rateHi = higher > 0 ? (total / higher) * 0.94 : 0;
-    let rateLo = lower > 0 ? (total / lower) * 0.94 : 0;
-    document.getElementById('rate-hi').innerText = rateHi > 0 ? "x"+rateHi.toFixed(2) : "-";
-    document.getElementById('rate-lo').innerText = rateLo > 0 ? "x"+rateLo.toFixed(2) : "-";
-    document.querySelector('.btn-hi').disabled = (rateHi === 0);
-    document.querySelector('.btn-lo').disabled = (rateLo === 0);
-    document.getElementById('hilo-profit').innerText = `(${hiloPot} $)`
-}
-function guessHiLo(choice) {
-    let oldVal = currentCard.val;
-    let nextCard = { val: Math.floor(Math.random()*13)+2, suit: suits[Math.floor(Math.random()*4)] };
-    let hist = document.getElementById('hilo-history');
-    let mini = document.createElement('div'); mini.className = 'mini-card'; 
-    mini.innerText = (ranks[oldVal] || oldVal) + currentCard.suit; hist.appendChild(mini);
-    currentCard = nextCard;
-    document.getElementById('hilo-card').innerHTML = getCardHTML(nextCard.val, nextCard.suit);
-    
-    let won = false;
-    if(choice === 'hi' && nextCard.val > oldVal) won = true;
-    if(choice === 'lo' && nextCard.val < oldVal) won = true;
-    
-    if(won) {
-        let total = 52; let chance = (choice === 'hi') ? (14 - oldVal) * 4 : (oldVal - 2) * 4;
-        let mult = (total / chance) * 0.94;
-        hiloPot = Math.floor(hiloPot * mult);
-        document.getElementById('hilo-info').innerText = "Correct! " + hiloPot + "$";
-        document.getElementById('hilo-info').style.color = "#4CAF50";
-        updateHiLoRates();
-    } else {
-        document.getElementById('hilo-info').innerText = "WRONG! Lost " + hiloBet + "$";
-        document.getElementById('hilo-info').style.color = "#F44336";
-        resetHiLo();
-    }
-}
-function cashoutHiLo() {
-    balance += hiloPot; updateBalanceUI(); showBalanceLog(hiloPot); updateStats(true);
-    document.getElementById('hilo-info').innerText = "Cashed out " + hiloPot + "$";
-    resetHiLo();
-}
-function resetHiLo() {
-    document.getElementById('btn-hilo-start').style.display = 'block';
-    document.getElementById('hilo-controls').style.display = 'none';
-    isGameActive = false;
-}
-
-/* ================= LIMBO ================= */
-document.getElementById('limbo-target').addEventListener('input', updateLimboCalc);
-document.getElementById('bet-limbo').addEventListener('input', updateLimboCalc);
-function updateLimboCalc() {
-    let target = parseFloat(document.getElementById('limbo-target').value) || 1.01;
-    if(target < 1.01) target = 1.01;
-    document.getElementById('limbo-chance').innerText = (99 / target).toFixed(2) + "%";
-}
-function playLimbo() {
-    let target = parseFloat(document.getElementById('limbo-target').value); if(target < 1.01) return;
-    const bet = getBet('bet-limbo'); if(!bet) return;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet);
-    let display = document.getElementById('limbo-result');
-    let result = 0.99 / Math.random(); if(result>10000) result=10000;
-    display.style.color = "#fff";
-    let ticks = 0;
-    let timer = setInterval(() => {
-        display.innerText = (Math.random() * 100).toFixed(2) + "x"; ticks++;
-        if(ticks > 5) {
-            clearInterval(timer);
-            display.innerText = result.toFixed(2) + "x";
-            if(result >= target) {
-                let win = Math.floor(bet * target);
-                balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
-                display.style.color = "#4CAF50";
-            } else { display.style.color = "#F44336"; updateStats(false); }
-        }
-    }, 50);
-}
-
-/* ================= DIAMONDS ================= */
-const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴', '🟣', '⚫', '⚪']; 
+/* ================= DIAMONDS (EASIER) ================= */
+const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴']; // Reduced to 6
 function playDiamonds() {
     if(isGameActive) return;
     const bet = getBet('bet-diamonds'); if(!bet) return;
@@ -173,22 +70,95 @@ function checkDiamondsWin(arr, bet) {
     let counts = {}; arr.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
     let max = 0; for(let k in counts) if(counts[k] > max) max = counts[k];
     let mult = 0; let elId = "";
-    if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 4; elId="pay-3"; } else if(max === 2) { 
+    if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 5; elId="pay-4"; } 
+    else if(max === 2) { 
         let pairs = 0; for(let k in counts) if(counts[k] === 2) pairs++;
-        if(pairs >= 2) { mult = 2; elId="pay-2"; }
+        if(pairs >= 2) { mult = 2; elId="pay-3"; } // 2 pair
+        else { mult = 1.2; elId="pay-2"; } // 1 pair
     }
     if(mult > 0) {
-        let win = bet * mult; balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
+        let win = Math.floor(bet * mult); balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
         document.getElementById('diamonds-msg').innerText = `WON ${win}$ (x${mult})`;
         document.getElementById('diamonds-msg').style.color = "#4CAF50";
         if(document.getElementById(elId)) document.getElementById(elId).classList.add('active');
         for(let i=0; i<5; i++) if(counts[arr[i]] >= 2) document.getElementById('gb'+(i+1)).classList.add('win');
     } else {
-        document.getElementById('diamonds-msg').innerText = "No luck";
+        document.getElementById('diamonds-msg').innerText = "No match";
         document.getElementById('diamonds-msg').style.color = "#888";
         updateStats(false);
     }
     isGameActive = false;
+}
+
+/* ================= PLINKO (FIXED PEGS) ================= */
+const plinkoRows = 8;
+const plinkoRisks = {
+    low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
+    medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
+    high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29]
+};
+let pegCoords = [];
+
+function updatePlinkoRisk() {
+    const risk = document.getElementById('plinko-risk').value;
+    const multsDiv = document.getElementById('plinko-multipliers');
+    const board = document.getElementById('plinko-board');
+    multsDiv.innerHTML = ''; board.innerHTML = ''; pegCoords = [];
+
+    const boardW = 320; const startY = 30; const gapX = 30; const gapY = 25;
+
+    for(let i=0; i<plinkoRows; i++) {
+        let pegsInRow = i + 3;
+        let rowWidth = (pegsInRow - 1) * gapX;
+        let startX = (boardW - rowWidth) / 2;
+        for(let j=0; j < pegsInRow; j++) {
+            let peg = document.createElement('div'); peg.className='plinko-peg';
+            let px = startX + j * gapX; let py = startY + i * gapY;
+            peg.style.left = px + 'px'; peg.style.top = py + 'px';
+            board.appendChild(peg); pegCoords.push({x: px, y: py});
+        }
+    }
+    plinkoRisks[risk].forEach(v => {
+        let m = document.createElement('div'); m.className='plinko-mult'; m.innerText=v+'x';
+        if(v >= 10) m.className += ' high-pay'; else if(v < 1) m.className += ' low-pay'; else m.style.background = '#444';
+        multsDiv.appendChild(m);
+    });
+}
+function playPlinko() {
+    const bet = getBet('bet-plinko'); if(!bet) return;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); dropBall(bet);
+}
+function dropBall(bet) {
+    const board = document.getElementById('plinko-board');
+    const ball = document.createElement('div'); ball.className='plinko-ball';
+    board.appendChild(ball);
+    let x = 160; let y = 0; let vx = (Math.random() - 0.5) * 1; let vy = 0;
+    const gravity = 0.25; const friction = 0.98; const bounce = 0.6;
+    let interval = setInterval(() => {
+        vy += gravity; vx *= friction; x += vx; y += vy;
+        for(let p of pegCoords) {
+            let dx = x - p.x; let dy = y - p.y;
+            if (dx*dx + dy*dy < 80) { // Collision
+                let angle = Math.atan2(dy, dx);
+                let speed = Math.sqrt(vx*vx + vy*vy);
+                vx = Math.cos(angle) * speed * bounce + (Math.random() - 0.5) * 1.5;
+                vy = Math.sin(angle) * speed * bounce;
+                x += vx; y += vy;
+            }
+        }
+        if(x < 5) { x=5; vx = -vx * 0.6; } if(x > 315) { x=315; vx = -vx * 0.6; }
+        ball.style.top = y + 'px'; ball.style.left = x + 'px';
+        if (y > 250) {
+            clearInterval(interval); ball.remove();
+            let bucket = Math.floor(x / (320/9)); if (bucket < 0) bucket = 0; if (bucket > 8) bucket = 8;
+            const risk = document.getElementById('plinko-risk').value;
+            const mult = plinkoRisks[risk][bucket];
+            const win = Math.floor(bet * mult);
+            balance += win; updateBalanceUI(); updateStats(win > bet); if(win > 0) showBalanceLog(win);
+            const msg = document.getElementById('plinko-msg');
+            msg.innerText = `x${mult} | ${win}$`; msg.style.color = mult >= 1 ? '#4CAF50' : '#F44336';
+        }
+    }, 16);
 }
 
 /* ================= ROCKET ================= */
@@ -342,72 +312,6 @@ function playWheel(multiplier) {
     }, 4000);
 }
 
-/* ================= PLINKO ================= */
-const plinkoRows = 8;
-const plinkoRisks = {
-    low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
-    medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
-    high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29]
-};
-let pegCoords = [];
-function updatePlinkoRisk() {
-    const risk = document.getElementById('plinko-risk').value;
-    const multsDiv = document.getElementById('plinko-multipliers');
-    const board = document.getElementById('plinko-board');
-    multsDiv.innerHTML = ''; board.innerHTML = ''; pegCoords = [];
-    const boardW = 320; const startY = 30; const gapX = 30; const gapY = 25;
-    for(let i=0; i<plinkoRows; i++) {
-        let pegsInRow = i + 3; let rowWidth = (pegsInRow - 1) * gapX; let startX = (boardW - rowWidth) / 2;
-        for(let j=0; j < pegsInRow; j++) {
-            let peg = document.createElement('div'); peg.className='plinko-peg';
-            let px = startX + j * gapX; let py = startY + i * gapY;
-            peg.style.left = px + 'px'; peg.style.top = py + 'px';
-            board.appendChild(peg); pegCoords.push({x: px, y: py});
-        }
-    }
-    plinkoRisks[risk].forEach(v => {
-        let m = document.createElement('div'); m.className='plinko-mult'; m.innerText=v+'x';
-        if(v >= 10) m.className += ' high-pay'; else if(v < 1) m.className += ' low-pay'; else m.style.background = '#444';
-        multsDiv.appendChild(m);
-    });
-}
-function playPlinko() {
-    const bet = getBet('bet-plinko'); if(!bet) return;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); dropBall(bet);
-}
-function dropBall(bet) {
-    const board = document.getElementById('plinko-board');
-    const ball = document.createElement('div'); ball.className='plinko-ball';
-    board.appendChild(ball);
-    let x = 160; let y = 0; let vx = (Math.random() - 0.5) * 1; let vy = 0;
-    const gravity = 0.25; const friction = 0.98; const bounce = 0.6;
-    let interval = setInterval(() => {
-        vy += gravity; vx *= friction; x += vx; y += vy;
-        for(let p of pegCoords) {
-            let dx = x - p.x; let dy = y - p.y;
-            if (dx*dx + dy*dy < 80) {
-                let angle = Math.atan2(dy, dx);
-                let speed = Math.sqrt(vx*vx + vy*vy);
-                vx = Math.cos(angle) * speed * bounce + (Math.random() - 0.5) * 1.5;
-                vy = Math.sin(angle) * speed * bounce;
-                x += vx; y += vy;
-            }
-        }
-        if(x < 5) { x=5; vx = -vx * 0.6; } if(x > 315) { x=315; vx = -vx * 0.6; }
-        ball.style.top = y + 'px'; ball.style.left = x + 'px';
-        if (y > 250) {
-            clearInterval(interval); ball.remove();
-            let bucket = Math.floor(x / (320/9)); if (bucket < 0) bucket = 0; if (bucket > 8) bucket = 8;
-            const risk = document.getElementById('plinko-risk').value;
-            const mult = plinkoRisks[risk][bucket];
-            const win = Math.floor(bet * mult);
-            balance += win; updateBalanceUI(); updateStats(win > bet); if(win > 0) showBalanceLog(win);
-            const msg = document.getElementById('plinko-msg');
-            msg.innerText = `x${mult} | ${win}$`; msg.style.color = mult >= 1 ? '#4CAF50' : '#F44336';
-        }
-    }, 16);
-}
-
 /* ================= MINES ================= */
 let minesActive = false, minesMap = [], minesPot = 0, minesCount = 5;
 function startMines() {
@@ -463,7 +367,135 @@ function updateMinesUI() {
     el.innerText = minesPot + ' $'; el.style.color = '#FFD700';
 }
 
-/* ================= SLOTS ================= */
+/* ================= KENO ================= */
+let kenoSel = [];
+function initKeno() {
+    const grid = document.getElementById('keno-grid');
+    for(let i=1; i<=40; i++) {
+        let c = document.createElement('div'); c.className='keno-cell'; c.innerText=i;
+        c.onclick = () => selectKeno(c, i);
+        grid.appendChild(c);
+    }
+}
+function selectKeno(el, num) {
+    if(isGameActive) return;
+    if(kenoSel.includes(num)) {
+        kenoSel = kenoSel.filter(n=>n!==num); el.classList.remove('selected');
+    } else {
+        if(kenoSel.length>=10) return;
+        kenoSel.push(num); el.classList.add('selected');
+    }
+    document.getElementById('keno-count').innerText = kenoSel.length;
+}
+function playKeno() {
+    if(isGameActive || kenoSel.length===0) return;
+    const bet = getBet('bet-keno'); if(!bet) return;
+    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive=true;
+    document.querySelectorAll('.keno-cell').forEach(c=>c.classList.remove('hit','miss'));
+    let draw = []; while(draw.length<10) { let n = Math.floor(Math.random()*40)+1; if(!draw.includes(n)) draw.push(n); }
+    let hits = 0; let i=0;
+    let timer = setInterval(() => {
+        let n = draw[i]; let el = document.querySelectorAll('.keno-cell')[n-1];
+        if(kenoSel.includes(n)) { el.classList.add('hit'); hits++; } else { el.classList.add('miss'); }
+        i++;
+        if(i>=10) {
+            clearInterval(timer);
+            let mult = 0; if(hits>=2) mult = hits; 
+            let win = bet * mult; balance+=win; updateBalanceUI(); updateStats(win>0);
+            if(win > 0) showBalanceLog(win);
+            document.getElementById('keno-msg').innerText = `Hits: ${hits} | Won: ${win}$`;
+            isGameActive=false;
+        }
+    }, 100);
+}
+
+/* ================= HI-LO ================= */
+const suits = ['♠', '♥', '♦', '♣']; const ranks = {11:'J', 12:'Q', 13:'K', 14:'A'};
+let currentCard = null, hiloBet = 0, hiloPot = 0;
+function getCardHTML(val, suit) {
+    let rank = ranks[val] || val; let color = (suit === '♥' || suit === '♦') ? 'red' : 'black';
+    return `<div class="card ${color}"><div>${rank}</div><div style="font-size:40px">${suit}</div></div>`;
+}
+function startHiLo() {
+    if(isGameActive) return;
+    const bet = getBet('bet-hilo'); if(!bet) return;
+    hiloBet = bet; hiloPot = bet;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true;
+    currentCard = { val: Math.floor(Math.random()*13)+2, suit: suits[Math.floor(Math.random()*4)] };
+    document.getElementById('hilo-card').innerHTML = getCardHTML(currentCard.val, currentCard.suit);
+    document.getElementById('hilo-history').innerHTML = '';
+    document.getElementById('hilo-info').innerText = "Make a choice";
+    document.getElementById('btn-hilo-start').style.display = 'none';
+    document.getElementById('hilo-controls').style.display = 'block';
+    updateHiLoRates();
+}
+function updateHiLoRates() {
+    let total = 52; let lower = (currentCard.val - 2) * 4; let higher = (14 - currentCard.val) * 4;
+    let rateHi = higher > 0 ? (total / higher) * 0.94 : 0;
+    let rateLo = lower > 0 ? (total / lower) * 0.94 : 0;
+    document.getElementById('rate-hi').innerText = rateHi > 0 ? "x"+rateHi.toFixed(2) : "-";
+    document.getElementById('rate-lo').innerText = rateLo > 0 ? "x"+rateLo.toFixed(2) : "-";
+    document.querySelector('.btn-hi').disabled = (rateHi === 0);
+    document.querySelector('.btn-lo').disabled = (rateLo === 0);
+    document.getElementById('hilo-profit').innerText = `(${hiloPot} $)`
+}
+function guessHiLo(choice) {
+    let oldVal = currentCard.val;
+    let nextCard = { val: Math.floor(Math.random()*13)+2, suit: suits[Math.floor(Math.random()*4)] };
+    let hist = document.getElementById('hilo-history');
+    let mini = document.createElement('div'); mini.className = 'mini-card'; 
+    mini.innerText = (ranks[oldVal] || oldVal) + currentCard.suit; hist.appendChild(mini);
+    currentCard = nextCard;
+    document.getElementById('hilo-card').innerHTML = getCardHTML(nextCard.val, nextCard.suit);
+    let won = false;
+    if(choice === 'hi' && nextCard.val > oldVal) won = true;
+    if(choice === 'lo' && nextCard.val < oldVal) won = true;
+    if(won) {
+        let total = 52; let chance = (choice === 'hi') ? (14 - oldVal) * 4 : (oldVal - 2) * 4;
+        let mult = (total / chance) * 0.94;
+        hiloPot = Math.floor(hiloPot * mult);
+        document.getElementById('hilo-info').innerText = "Correct! " + hiloPot + "$";
+        updateHiLoRates();
+    } else {
+        document.getElementById('hilo-info').innerText = "WRONG! Lost " + hiloBet + "$";
+        resetHiLo();
+    }
+}
+function cashoutHiLo() {
+    balance += hiloPot; updateBalanceUI(); showBalanceLog(hiloPot); updateStats(true);
+    document.getElementById('hilo-info').innerText = "Cashed out " + hiloPot + "$";
+    resetHiLo();
+}
+function resetHiLo() {
+    document.getElementById('btn-hilo-start').style.display = 'block';
+    document.getElementById('hilo-controls').style.display = 'none';
+    isGameActive = false;
+}
+
+/* ================= LIMBO ================= */
+function playLimbo() {
+    let target = parseFloat(document.getElementById('limbo-target').value); if(target < 1.01) return;
+    const bet = getBet('bet-limbo'); if(!bet) return;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet);
+    let display = document.getElementById('limbo-result');
+    let result = 0.99 / Math.random(); if(result>10000) result=10000;
+    display.style.color = "#fff";
+    let ticks = 0;
+    let timer = setInterval(() => {
+        display.innerText = (Math.random() * 100).toFixed(2) + "x"; ticks++;
+        if(ticks > 5) {
+            clearInterval(timer);
+            display.innerText = result.toFixed(2) + "x";
+            if(result >= target) {
+                let win = Math.floor(bet * target);
+                balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
+                display.style.color = "#4CAF50";
+            } else { display.style.color = "#F44336"; updateStats(false); }
+        }
+    }, 50);
+}
+
+/* ================= SLOTS, DICE, COIN (Same logic) ================= */
 let isSlotSpinning = false;
 function playSlots() {
     if(isSlotSpinning) return;
@@ -485,8 +517,6 @@ function playSlots() {
         }
     }, 80);
 }
-
-/* ================= DICE ================= */
 let isDiceRolling = false;
 function playDice(high) {
     if(isDiceRolling) return;
@@ -509,8 +539,6 @@ function playDice(high) {
         },500);
     },1000);
 }
-
-/* ================= COIN ================= */
 let isCoinFlipping = false;
 function playCoin(choice) {
     if(isCoinFlipping) return;
