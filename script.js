@@ -50,8 +50,8 @@ function setMaxBet(id) { document.getElementById(id).value = balance; }
 function getBet(id) { const val = parseInt(document.getElementById(id).value); if(isNaN(val)||val<=0){alert('Invalid bet');return null;} if(val>balance){alert('Funds low');return null;} return val; }
 function updateStats(win) { stats.games++; if(win) stats.wins++; else stats.losses++; document.getElementById('stat-total').innerText=stats.games; document.getElementById('stat-wins').innerText=stats.wins; document.getElementById('stat-losses').innerText=stats.losses; }
 
-/* ================= DIAMONDS (EASIER) ================= */
-const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴']; // Reduced to 6
+/* ================= DIAMONDS (BALANCED) ================= */
+const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴', '🟣', '⚫']; // 8 Gems
 function playDiamonds() {
     if(isGameActive) return;
     const bet = getBet('bet-diamonds'); if(!bet) return;
@@ -70,20 +70,20 @@ function checkDiamondsWin(arr, bet) {
     let counts = {}; arr.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
     let max = 0; for(let k in counts) if(counts[k] > max) max = counts[k];
     let mult = 0; let elId = "";
-    if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 5; elId="pay-4"; } 
+    if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 3; elId="pay-3"; } 
     else if(max === 2) { 
         let pairs = 0; for(let k in counts) if(counts[k] === 2) pairs++;
-        if(pairs >= 2) { mult = 2; elId="pay-3"; } // 2 pair
-        else { mult = 1.2; elId="pay-2"; } // 1 pair
+        if(pairs >= 2) { mult = 2; elId="pay-2"; } // 2 Pair = 2x
+        else { mult = 0.5; } // 1 Pair = Half bet back (Consolation)
     }
     if(mult > 0) {
         let win = Math.floor(bet * mult); balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
         document.getElementById('diamonds-msg').innerText = `WON ${win}$ (x${mult})`;
         document.getElementById('diamonds-msg').style.color = "#4CAF50";
-        if(document.getElementById(elId)) document.getElementById(elId).classList.add('active');
+        if(elId && document.getElementById(elId)) document.getElementById(elId).classList.add('active');
         for(let i=0; i<5; i++) if(counts[arr[i]] >= 2) document.getElementById('gb'+(i+1)).classList.add('win');
     } else {
-        document.getElementById('diamonds-msg').innerText = "No match";
+        document.getElementById('diamonds-msg').innerText = "No luck";
         document.getElementById('diamonds-msg').style.color = "#888";
         updateStats(false);
     }
@@ -367,48 +367,6 @@ function updateMinesUI() {
     el.innerText = minesPot + ' $'; el.style.color = '#FFD700';
 }
 
-/* ================= KENO ================= */
-let kenoSel = [];
-function initKeno() {
-    const grid = document.getElementById('keno-grid');
-    for(let i=1; i<=40; i++) {
-        let c = document.createElement('div'); c.className='keno-cell'; c.innerText=i;
-        c.onclick = () => selectKeno(c, i);
-        grid.appendChild(c);
-    }
-}
-function selectKeno(el, num) {
-    if(isGameActive) return;
-    if(kenoSel.includes(num)) {
-        kenoSel = kenoSel.filter(n=>n!==num); el.classList.remove('selected');
-    } else {
-        if(kenoSel.length>=10) return;
-        kenoSel.push(num); el.classList.add('selected');
-    }
-    document.getElementById('keno-count').innerText = kenoSel.length;
-}
-function playKeno() {
-    if(isGameActive || kenoSel.length===0) return;
-    const bet = getBet('bet-keno'); if(!bet) return;
-    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive=true;
-    document.querySelectorAll('.keno-cell').forEach(c=>c.classList.remove('hit','miss'));
-    let draw = []; while(draw.length<10) { let n = Math.floor(Math.random()*40)+1; if(!draw.includes(n)) draw.push(n); }
-    let hits = 0; let i=0;
-    let timer = setInterval(() => {
-        let n = draw[i]; let el = document.querySelectorAll('.keno-cell')[n-1];
-        if(kenoSel.includes(n)) { el.classList.add('hit'); hits++; } else { el.classList.add('miss'); }
-        i++;
-        if(i>=10) {
-            clearInterval(timer);
-            let mult = 0; if(hits>=2) mult = hits; 
-            let win = bet * mult; balance+=win; updateBalanceUI(); updateStats(win>0);
-            if(win > 0) showBalanceLog(win);
-            document.getElementById('keno-msg').innerText = `Hits: ${hits} | Won: ${win}$`;
-            isGameActive=false;
-        }
-    }, 100);
-}
-
 /* ================= HI-LO ================= */
 const suits = ['♠', '♥', '♦', '♣']; const ranks = {11:'J', 12:'Q', 13:'K', 14:'A'};
 let currentCard = null, hiloBet = 0, hiloPot = 0;
@@ -455,9 +413,11 @@ function guessHiLo(choice) {
         let mult = (total / chance) * 0.94;
         hiloPot = Math.floor(hiloPot * mult);
         document.getElementById('hilo-info').innerText = "Correct! " + hiloPot + "$";
+        document.getElementById('hilo-info').style.color = "#4CAF50";
         updateHiLoRates();
     } else {
         document.getElementById('hilo-info').innerText = "WRONG! Lost " + hiloBet + "$";
+        document.getElementById('hilo-info').style.color = "#F44336";
         resetHiLo();
     }
 }
@@ -495,7 +455,7 @@ function playLimbo() {
     }, 50);
 }
 
-/* ================= SLOTS, DICE, COIN (Same logic) ================= */
+/* ================= SLOTS, DICE, COIN ================= */
 let isSlotSpinning = false;
 function playSlots() {
     if(isSlotSpinning) return;
