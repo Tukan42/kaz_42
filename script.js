@@ -10,7 +10,7 @@ let isGameActive = false;
 window.onload = function() {
     updateBalanceUI();
     generateBackground();
-    // INIT ALL GAMES
+    // FORCE INIT ALL GAMES
     initKeno();
     updatePlinkoRisk();
     initTower();
@@ -35,10 +35,10 @@ function showProfile() { if(isGameActive) return; hideAll(); document.getElement
 function openGame(id) { 
     hideAll(); 
     document.getElementById('game-'+id).classList.add('active');
-    // Re-init games that need layout
-    if(id==='plinko') updatePlinkoRisk();
-    if(id==='keno') initKeno(); // Ensure drawn
-    if(id==='tower') initTower();
+    // Ensure render on open
+    if(id === 'plinko') setTimeout(updatePlinkoRisk, 50);
+    if(id === 'tower') setTimeout(initTower, 50);
+    if(id === 'keno') setTimeout(initKeno, 50);
 }
 function hideAll() { document.querySelectorAll('main, section').forEach(el => { el.classList.remove('active'); el.classList.add('hidden'); }); }
 
@@ -58,7 +58,7 @@ function setMaxBet(id) { document.getElementById(id).value = balance; }
 function getBet(id) { const val = parseInt(document.getElementById(id).value); if(isNaN(val)||val<=0){alert('Invalid bet');return null;} if(val>balance){alert('Funds low');return null;} return val; }
 function updateStats(win) { stats.games++; if(win) stats.wins++; else stats.losses++; document.getElementById('stat-total').innerText=stats.games; document.getElementById('stat-wins').innerText=stats.wins; document.getElementById('stat-losses').innerText=stats.losses; }
 
-/* ================= ROCKET (PARABOLA) ================= */
+/* ================= ROCKET (PARABOLA + INFINITE ZOOM) ================= */
 let rocketTimer, rocketMult=1.00;
 let currentRocketBet = 0; 
 
@@ -90,11 +90,12 @@ function playRocket() {
         rocketMult += 0.001 * Math.exp(time * 0.12);
         document.getElementById('rocket-multiplier-center').innerText = rocketMult.toFixed(2)+'x';
 
-        // Pure Parabola: Y = X^2
+        // Pure Parabola: Y = X^2 (Smooth curve)
         let rawX = time * 10; 
         let rawY = Math.pow(time, 2.2) * 0.5;
 
-        // Auto-Scale (Zoom Out)
+        // Auto-Scale (Infinite Zoom Out)
+        // Ensure rocket stays within 80% of view area
         if (rawX > maxX * 0.8) maxX = rawX / 0.8;
         if (rawY > maxY * 0.8) maxY = rawY / 0.8;
 
@@ -149,7 +150,7 @@ function cashoutRocket() {
     document.getElementById('btn-rocket-cashout').classList.add('hidden');
 }
 
-/* ================= PLINKO (VISIBLE PEGS) ================= */
+/* ================= PLINKO ================= */
 const plinkoRows = 8;
 const plinkoRisks = {
     low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
@@ -185,8 +186,6 @@ function updatePlinkoRisk() {
             peg.style.left = px + 'px';
             peg.style.top = py + 'px';
             board.appendChild(peg);
-            
-            // Store world coords for physics
             pegCoords.push({x: px, y: py});
         }
     }
@@ -221,12 +220,11 @@ function dropBall(bet) {
         vy += gravity; vx *= friction;
         x += vx; y += vy;
 
-        // Collision Check
         for(let p of pegCoords) {
             let dx = x - p.x;
             let dy = y - p.y;
             let distSq = dx*dx + dy*dy;
-            if (distSq < 80) { // Hit
+            if (distSq < 80) { // Collision
                 let angle = Math.atan2(dy, dx);
                 let speed = Math.sqrt(vx*vx + vy*vy);
                 vx = Math.cos(angle) * speed * bounce + (Math.random() - 0.5) * 1.5;
@@ -235,7 +233,6 @@ function dropBall(bet) {
             }
         }
 
-        // Walls
         if(x < 5) { x=5; vx = -vx * 0.6; }
         if(x > 315) { x=315; vx = -vx * 0.6; }
 
@@ -245,7 +242,8 @@ function dropBall(bet) {
         if (y > 250) {
             clearInterval(interval);
             ball.remove();
-            let bucket = Math.floor(x / (320/9));
+            let bucketW = 320 / 9;
+            let bucket = Math.floor(x / bucketW);
             if (bucket < 0) bucket = 0; if (bucket > 8) bucket = 8;
             
             const risk = document.getElementById('plinko-risk').value;
@@ -262,7 +260,7 @@ function dropBall(bet) {
     }, 16);
 }
 
-/* ================= DIAMONDS (BALANCED) ================= */
+/* ================= DIAMONDS ================= */
 const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴', '🟣', '⚫']; 
 function playDiamonds() {
     if(isGameActive) return;
@@ -285,8 +283,8 @@ function checkDiamondsWin(arr, bet) {
     if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 5; elId="pay-4"; } 
     else if(max === 2) { 
         let pairs = 0; for(let k in counts) if(counts[k] === 2) pairs++;
-        if(pairs >= 2) { mult = 2; elId="pay-3"; } // 2 Pair
-        else { mult = 1.2; elId="pay-2"; } // 1 Pair (Small profit)
+        if(pairs >= 2) { mult = 2; elId="pay-3"; } 
+        else { mult = 1.2; elId="pay-2"; }
     }
     if(mult > 0) {
         let win = Math.floor(bet * mult); balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
@@ -295,7 +293,7 @@ function checkDiamondsWin(arr, bet) {
         if(elId && document.getElementById(elId)) document.getElementById(elId).classList.add('active');
         for(let i=0; i<5; i++) if(counts[arr[i]] >= 2) document.getElementById('gb'+(i+1)).classList.add('win');
     } else {
-        document.getElementById('diamonds-msg').innerText = "No luck";
+        document.getElementById('diamonds-msg').innerText = "No match";
         document.getElementById('diamonds-msg').style.color = "#888";
         updateStats(false);
     }
@@ -406,40 +404,6 @@ function playKeno() {
     }, 100);
 }
 
-/* ================= WHEEL ================= */
-let wheelSpinning = false;
-function playWheel(multiplier) {
-    if(isGameActive || wheelSpinning) return;
-    const bet = getBet('bet-wheel'); if(!bet) return;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true; wheelSpinning = true;
-    const wheel = document.getElementById('wheel-circle');
-    let extraSpins = 5 * 360; let finalAngle = Math.floor(Math.random() * 360);
-    wheel.style.transform = `rotate(${extraSpins + finalAngle}deg)`;
-    setTimeout(() => {
-        let actualAngle = (360 - (finalAngle % 360)) % 360;
-        let winningMult = 0;
-        if(actualAngle >= 0 && actualAngle < 90) winningMult = 2;
-        else if(actualAngle >= 90 && actualAngle < 180) winningMult = 3;
-        else if(actualAngle >= 180 && actualAngle < 270) winningMult = 5;
-        else if(actualAngle >= 270 && actualAngle < 360) winningMult = 50;
-        
-        let won = (multiplier === winningMult);
-        if(won) {
-            let winAmount = bet * multiplier;
-            balance += winAmount; updateBalanceUI(); showBalanceLog(winAmount); updateStats(true);
-            document.getElementById('wheel-msg').innerText = `WON ${winAmount}$`;
-            document.getElementById('wheel-msg').style.color = "#4CAF50";
-        } else {
-            updateStats(false);
-            document.getElementById('wheel-msg').innerText = "LOST";
-            document.getElementById('wheel-msg').style.color = "#F44336";
-        }
-        wheelSpinning = false; isGameActive = false;
-        wheel.style.transition = 'none'; wheel.style.transform = `rotate(${finalAngle % 360}deg)`;
-        setTimeout(() => { wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)'; }, 50);
-    }, 4000);
-}
-
 /* ================= MINES ================= */
 let minesActive = false, minesMap = [], minesPot = 0, minesCount = 5;
 function startMines() {
@@ -493,6 +457,40 @@ function revealAllMines(isWin) {
 function updateMinesUI() {
     const el = document.getElementById('mines-potential-win');
     el.innerText = minesPot + ' $'; el.style.color = '#FFD700';
+}
+
+/* ================= WHEEL ================= */
+let wheelSpinning = false;
+function playWheel(multiplier) {
+    if(isGameActive || wheelSpinning) return;
+    const bet = getBet('bet-wheel'); if(!bet) return;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true; wheelSpinning = true;
+    const wheel = document.getElementById('wheel-circle');
+    let extraSpins = 5 * 360; let finalAngle = Math.floor(Math.random() * 360);
+    wheel.style.transform = `rotate(${extraSpins + finalAngle}deg)`;
+    setTimeout(() => {
+        let actualAngle = (360 - (finalAngle % 360)) % 360;
+        let winningMult = 0;
+        if(actualAngle >= 0 && actualAngle < 90) winningMult = 2;
+        else if(actualAngle >= 90 && actualAngle < 180) winningMult = 3;
+        else if(actualAngle >= 180 && actualAngle < 270) winningMult = 5;
+        else if(actualAngle >= 270 && actualAngle < 360) winningMult = 50;
+        
+        let won = (multiplier === winningMult);
+        if(won) {
+            let winAmount = bet * multiplier;
+            balance += winAmount; updateBalanceUI(); showBalanceLog(winAmount); updateStats(true);
+            document.getElementById('wheel-msg').innerText = `WON ${winAmount}$`;
+            document.getElementById('wheel-msg').style.color = "#4CAF50";
+        } else {
+            updateStats(false);
+            document.getElementById('wheel-msg').innerText = "LOST";
+            document.getElementById('wheel-msg').style.color = "#F44336";
+        }
+        wheelSpinning = false; isGameActive = false;
+        wheel.style.transition = 'none'; wheel.style.transform = `rotate(${finalAngle % 360}deg)`;
+        setTimeout(() => { wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)'; }, 50);
+    }, 4000);
 }
 
 /* ================= SLOTS ================= */
