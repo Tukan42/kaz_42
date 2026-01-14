@@ -48,14 +48,13 @@ input:focus, select:focus { outline: none; }
 .quick-bets button { background: #2a2a2a; border: 1px solid #333; color: #aaa; font-size: 9px; padding: 4px 6px; border-radius: 3px; cursor: pointer; flex: 1 0 30%; } 
 .quick-bets button:hover { background: #333; color: #fff; } .quick-bets .btn-max { color: var(--gold-main); border-color: var(--gold-dark); font-weight: bold; } .quick-bets .btn-max:hover { background: var(--gold-dark); color: #000; }
 
-.btn-primary { padding: 0 30px; border: none; border-radius: 4px; font-weight: 600; text-transform: uppercase; cursor: pointer; transition: 0.2s; background: linear-gradient(to bottom, #D4AF37, #AA8822); color: #000; height: 45px; }
-.btn-primary:disabled, .btn-action:disabled, .btn-outline:disabled { background: #333; color: #555; cursor: not-allowed; border-color: #333; transform: none; }
-.btn-action { padding: 0 30px; border: none; border-radius: 4px; font-weight: 600; text-transform: uppercase; cursor: pointer; background: #4CAF50; color: #fff; height: 45px; }
+.btn-primary { padding: 0 30px; border: none; border-radius: 4px; font-weight: 600; text-transform: uppercase; cursor: pointer; transition: 0.2s; background: linear-gradient(to bottom, #D4AF37, #AA8822); color: #000; height: 45px; } .btn-primary:hover { background: linear-gradient(to bottom, #FFD700, #C5A059); }
+.btn-primary:disabled, .btn-action:disabled, .btn-outline:disabled, .btn-gold-coin:disabled, .btn-silver-coin:disabled, .btn-wheel:disabled { background: #333; color: #555; cursor: not-allowed; border-color: #333; transform: none; }
+.btn-action { padding: 0 30px; border: none; border-radius: 4px; font-weight: 600; text-transform: uppercase; cursor: pointer; background: #4CAF50; color: #fff; height: 45px; } .btn-action:hover { background: #45a049; }
 .btn-secondary { padding: 10px 30px; border: 1px solid #444; border-radius: 4px; background: transparent; color: #888; cursor: pointer; text-transform: uppercase; font-size: 12px; font-weight: 600; } .btn-secondary:hover { border-color: #666; color: #fff; }
 .btn-outline { padding: 10px 20px; background: transparent; border: 1px solid var(--gold-dark); color: var(--gold-main); cursor: pointer; border-radius: 4px; } .btn-outline:hover { background: rgba(212, 175, 55, 0.1); color: #fff; }
 .btn-group { display: flex; gap: 10px; }
-.btn-gold-coin { padding: 10px 25px; background: #FFD700; border: none; border-radius: 4px; cursor: pointer; color: #000; font-weight: bold; } 
-.btn-silver-coin { padding: 10px 25px; background: #C0C0C0; border: none; border-radius: 4px; cursor: pointer; color: #000; font-weight: bold; }
+.btn-gold-coin { padding: 10px 25px; background: #FFD700; border: none; border-radius: 4px; cursor: pointer; color: #000; font-weight: bold; } .btn-silver-coin { padding: 10px 25px; background: #C0C0C0; border: none; border-radius: 4px; cursor: pointer; color: #000; font-weight: bold; }
 .btn-wheel { padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: #fff; width: 50px; font-size: 12px;}
 .btn-wheel.black { background: #222; border: 1px solid #555; } .btn-wheel.red { background: #F44336; } .btn-wheel.green { background: #4CAF50; } .btn-wheel.gold { background: #FFD700; color: #000; }
 
@@ -64,7 +63,7 @@ input:focus, select:focus { outline: none; }
 .game-nav-bar button { flex: 0 0 auto; width: 45px; height: 45px; border-radius: 8px; border: 1px solid #333; background: #222; font-size: 20px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
 .game-nav-bar button.active { background: var(--gold-main); border-color: var(--gold-light); transform: scale(1.1); }
 
-/* ROCKET STYLES */
+/* ROCKET SMOOTH CURVE */
 .rocket-field { height: 280px; background: #161616; border-radius: 4px; position: relative; border: 1px solid #2a2a2a; overflow: hidden; width: 100%; box-shadow: inset 0 0 20px #000;}
 #rocket-obj { position: absolute; width: 30px; height: 30px; bottom: 0; left: 0; z-index: 10; transition: none; }
 #rocket-icon { font-size: 24px; width: 100%; height: 100%; display: block; transform-origin: center center; filter: drop-shadow(0 0 5px orange); }
@@ -75,10 +74,10 @@ input:focus, select:focus { outline: none; }
 .particle { position: absolute; background: #FFD700; border-radius: 50%; opacity: 0.8; animation: fadeParticle 0.8s forwards; }
 @keyframes fadeParticle { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(0); opacity: 0; margin-left: -20px; } }
 
-/* PLINKO FIXED */
+/* PLINKO FIXED PEGS */
 .plinko-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; overflow: hidden; }
 .plinko-board { position: relative; width: 320px; height: 260px; margin-bottom: 5px; background: #161616; border-radius: 8px; border: 1px solid #333; }
-.plinko-peg { position: absolute; width: 6px; height: 6px; background: #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.5); transform: translate(-50%, -50%); }
+.plinko-peg { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.8); transform: translate(-50%, -50%); }
 .plinko-multipliers { display: flex; justify-content: center; gap: 4px; width: 330px; margin-top: 5px; }
 .plinko-mult { font-size: 9px; font-weight: bold; width: 30px; height: 25px; display: flex; align-items: center; justify-content: center; background: #222; border-radius: 4px; border: 1px solid #444; color: #aaa; transition: 0.3s; }
 .plinko-mult.high-pay { background: #AA8822; color: #fff; border-color: #FFD700; }
