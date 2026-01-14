@@ -10,6 +10,7 @@ let isGameActive = false;
 window.onload = function() {
     updateBalanceUI();
     generateBackground();
+    // INIT ALL GAMES
     initKeno();
     updatePlinkoRisk();
     initTower();
@@ -31,7 +32,14 @@ function updateBalanceUI() {
 }
 function showMenu() { if(isGameActive && !confirm("Game in progress. Leave?")) return; hideAll(); document.getElementById('menu-section').classList.add('active'); }
 function showProfile() { if(isGameActive) return; hideAll(); document.getElementById('profile-section').classList.add('active'); updateBalanceUI(); }
-function openGame(id) { hideAll(); document.getElementById('game-'+id).classList.add('active'); }
+function openGame(id) { 
+    hideAll(); 
+    document.getElementById('game-'+id).classList.add('active');
+    // Re-init games that need layout
+    if(id==='plinko') updatePlinkoRisk();
+    if(id==='keno') initKeno(); // Ensure drawn
+    if(id==='tower') initTower();
+}
 function hideAll() { document.querySelectorAll('main, section').forEach(el => { el.classList.remove('active'); el.classList.add('hidden'); }); }
 
 function showBalanceLog(amount) {
@@ -50,8 +58,212 @@ function setMaxBet(id) { document.getElementById(id).value = balance; }
 function getBet(id) { const val = parseInt(document.getElementById(id).value); if(isNaN(val)||val<=0){alert('Invalid bet');return null;} if(val>balance){alert('Funds low');return null;} return val; }
 function updateStats(win) { stats.games++; if(win) stats.wins++; else stats.losses++; document.getElementById('stat-total').innerText=stats.games; document.getElementById('stat-wins').innerText=stats.wins; document.getElementById('stat-losses').innerText=stats.losses; }
 
+/* ================= ROCKET (PARABOLA) ================= */
+let rocketTimer, rocketMult=1.00;
+let currentRocketBet = 0; 
+
+function playRocket() {
+    if(isGameActive) return;
+    const bet = getBet('bet-rocket'); if(!bet) return;
+    currentRocketBet = bet; balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true;
+    
+    document.getElementById('btn-rocket-play').classList.add('hidden');
+    document.getElementById('btn-rocket-cashout').classList.remove('hidden');
+    document.getElementById('rocket-status-text').innerText = "FLYING...";
+    document.getElementById('rocket-status-text').style.color = "#FFD700";
+    
+    const rocketObj = document.getElementById('rocket-obj');
+    const rocketIcon = document.getElementById('rocket-icon');
+    const svgLine = document.getElementById('rocket-line');
+    const particles = document.getElementById('rocket-particles');
+    
+    particles.innerHTML = ''; rocketMult = 1.00;
+    rocketObj.style.left = '0%'; rocketObj.style.bottom = '0%'; 
+    rocketIcon.innerText = '🚀'; rocketIcon.style.transform = 'rotate(0deg)';
+    svgLine.setAttribute('d', 'M0,100'); 
+
+    let time = 0;
+    let maxX = 100; let maxY = 100; 
+
+    rocketTimer = setInterval(() => {
+        time += 0.05;
+        rocketMult += 0.001 * Math.exp(time * 0.12);
+        document.getElementById('rocket-multiplier-center').innerText = rocketMult.toFixed(2)+'x';
+
+        // Pure Parabola: Y = X^2
+        let rawX = time * 10; 
+        let rawY = Math.pow(time, 2.2) * 0.5;
+
+        // Auto-Scale (Zoom Out)
+        if (rawX > maxX * 0.8) maxX = rawX / 0.8;
+        if (rawY > maxY * 0.8) maxY = rawY / 0.8;
+
+        let cssX = (rawX / maxX) * 100;
+        let cssY = (rawY / maxY) * 100;
+
+        rocketObj.style.left = cssX + '%';
+        rocketObj.style.bottom = cssY + '%';
+
+        // Angle Calculation
+        let pTime = time - 0.05;
+        let pX = pTime * 10; let pY = Math.pow(pTime, 2.2) * 0.5;
+        let angle = Math.atan2(rawY-pY, rawX-pX) * 180 / Math.PI; 
+        rocketIcon.style.transform = `rotate(${angle-15}deg)`;
+
+        // Draw Line
+        let svg = document.getElementById('rocket-svg');
+        svg.setAttribute('viewBox', `0 0 ${maxX} ${maxY}`);
+        let svgY = maxY - rawY; // Invert for SVG
+        let d = svgLine.getAttribute('d');
+        if(d === 'M0,100' || d === 'M0,300') d = `M0,${maxY}`; 
+        svgLine.setAttribute('d', d + ` L${rawX},${svgY}`);
+
+        // Particles
+        if(Math.random()>0.5) {
+            let p = document.createElement('div'); p.className='particle';
+            p.style.left = cssX+'%'; p.style.bottom = cssY+'%';
+            particles.appendChild(p); setTimeout(()=>p.remove(),800);
+        }
+
+        if(Math.random() < 0.002 * rocketMult) crashRocket();
+    }, 20);
+}
+
+function crashRocket() {
+    clearInterval(rocketTimer); isGameActive = false; updateStats(false);
+    document.getElementById('rocket-icon').innerText = '💥';
+    document.getElementById('rocket-status-text').innerText = "CRASHED";
+    document.getElementById('rocket-status-text').style.color = "red";
+    document.getElementById('btn-rocket-play').classList.remove('hidden');
+    document.getElementById('btn-rocket-cashout').classList.add('hidden');
+}
+
+function cashoutRocket() {
+    if(!isGameActive) return;
+    clearInterval(rocketTimer); isGameActive = false; updateStats(true);
+    let win = Math.floor(currentRocketBet * rocketMult);
+    balance += win; updateBalanceUI(); showBalanceLog(win);
+    document.getElementById('rocket-status-text').innerText = `WON +${win}`;
+    document.getElementById('rocket-status-text').style.color = "#4CAF50";
+    document.getElementById('btn-rocket-play').classList.remove('hidden');
+    document.getElementById('btn-rocket-cashout').classList.add('hidden');
+}
+
+/* ================= PLINKO (VISIBLE PEGS) ================= */
+const plinkoRows = 8;
+const plinkoRisks = {
+    low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
+    medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
+    high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29]
+};
+let pegCoords = [];
+
+function updatePlinkoRisk() {
+    const risk = document.getElementById('plinko-risk').value;
+    const multsDiv = document.getElementById('plinko-multipliers');
+    const board = document.getElementById('plinko-board');
+    if(!board) return;
+    
+    multsDiv.innerHTML = ''; board.innerHTML = ''; pegCoords = [];
+
+    const boardW = 320;
+    const startY = 30; 
+    const gapX = 30;
+    const gapY = 25;
+
+    for(let i=0; i<plinkoRows; i++) {
+        let pegsInRow = i + 3;
+        let rowWidth = (pegsInRow - 1) * gapX;
+        let startX = (boardW - rowWidth) / 2;
+
+        for(let j=0; j < pegsInRow; j++) {
+            let peg = document.createElement('div'); 
+            peg.className='plinko-peg';
+            let px = startX + j * gapX;
+            let py = startY + i * gapY;
+            
+            peg.style.left = px + 'px';
+            peg.style.top = py + 'px';
+            board.appendChild(peg);
+            
+            // Store world coords for physics
+            pegCoords.push({x: px, y: py});
+        }
+    }
+
+    const vals = plinkoRisks[risk];
+    vals.forEach(v => {
+        let m = document.createElement('div'); m.className='plinko-mult'; m.innerText=v+'x';
+        if(v >= 10) m.className += ' high-pay'; else if(v < 1) m.className += ' low-pay'; else m.style.background = '#444';
+        multsDiv.appendChild(m);
+    });
+}
+
+function playPlinko() {
+    const bet = getBet('bet-plinko'); if(!bet) return;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet);
+    dropBall(bet);
+}
+
+function dropBall(bet) {
+    const board = document.getElementById('plinko-board');
+    const ball = document.createElement('div'); ball.className='plinko-ball';
+    board.appendChild(ball);
+
+    let x = 160; let y = 0;
+    let vx = (Math.random() - 0.5) * 1; 
+    let vy = 0;
+    const gravity = 0.25;
+    const friction = 0.98;
+    const bounce = 0.6;
+
+    let interval = setInterval(() => {
+        vy += gravity; vx *= friction;
+        x += vx; y += vy;
+
+        // Collision Check
+        for(let p of pegCoords) {
+            let dx = x - p.x;
+            let dy = y - p.y;
+            let distSq = dx*dx + dy*dy;
+            if (distSq < 80) { // Hit
+                let angle = Math.atan2(dy, dx);
+                let speed = Math.sqrt(vx*vx + vy*vy);
+                vx = Math.cos(angle) * speed * bounce + (Math.random() - 0.5) * 1.5;
+                vy = Math.sin(angle) * speed * bounce;
+                x += vx; y += vy;
+            }
+        }
+
+        // Walls
+        if(x < 5) { x=5; vx = -vx * 0.6; }
+        if(x > 315) { x=315; vx = -vx * 0.6; }
+
+        ball.style.top = y + 'px';
+        ball.style.left = x + 'px';
+
+        if (y > 250) {
+            clearInterval(interval);
+            ball.remove();
+            let bucket = Math.floor(x / (320/9));
+            if (bucket < 0) bucket = 0; if (bucket > 8) bucket = 8;
+            
+            const risk = document.getElementById('plinko-risk').value;
+            const mult = plinkoRisks[risk][bucket];
+            const win = Math.floor(bet * mult);
+            
+            balance += win; updateBalanceUI(); updateStats(win > bet);
+            if(win > 0) showBalanceLog(win);
+            
+            const msg = document.getElementById('plinko-msg');
+            msg.innerText = `x${mult} | ${win}$`;
+            msg.style.color = mult >= 1 ? '#4CAF50' : '#F44336';
+        }
+    }, 16);
+}
+
 /* ================= DIAMONDS (BALANCED) ================= */
-const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴', '🟣', '⚫']; // 8 Gems
+const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴', '🟣', '⚫']; 
 function playDiamonds() {
     if(isGameActive) return;
     const bet = getBet('bet-diamonds'); if(!bet) return;
@@ -70,11 +282,11 @@ function checkDiamondsWin(arr, bet) {
     let counts = {}; arr.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
     let max = 0; for(let k in counts) if(counts[k] > max) max = counts[k];
     let mult = 0; let elId = "";
-    if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 3; elId="pay-3"; } 
+    if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 5; elId="pay-4"; } 
     else if(max === 2) { 
         let pairs = 0; for(let k in counts) if(counts[k] === 2) pairs++;
-        if(pairs >= 2) { mult = 2; elId="pay-2"; } // 2 Pair = 2x
-        else { mult = 0.5; } // 1 Pair = Half bet back (Consolation)
+        if(pairs >= 2) { mult = 2; elId="pay-3"; } // 2 Pair
+        else { mult = 1.2; elId="pay-2"; } // 1 Pair (Small profit)
     }
     if(mult > 0) {
         let win = Math.floor(bet * mult); balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
@@ -90,140 +302,12 @@ function checkDiamondsWin(arr, bet) {
     isGameActive = false;
 }
 
-/* ================= PLINKO (FIXED PEGS) ================= */
-const plinkoRows = 8;
-const plinkoRisks = {
-    low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
-    medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
-    high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29]
-};
-let pegCoords = [];
-
-function updatePlinkoRisk() {
-    const risk = document.getElementById('plinko-risk').value;
-    const multsDiv = document.getElementById('plinko-multipliers');
-    const board = document.getElementById('plinko-board');
-    multsDiv.innerHTML = ''; board.innerHTML = ''; pegCoords = [];
-
-    const boardW = 320; const startY = 30; const gapX = 30; const gapY = 25;
-
-    for(let i=0; i<plinkoRows; i++) {
-        let pegsInRow = i + 3;
-        let rowWidth = (pegsInRow - 1) * gapX;
-        let startX = (boardW - rowWidth) / 2;
-        for(let j=0; j < pegsInRow; j++) {
-            let peg = document.createElement('div'); peg.className='plinko-peg';
-            let px = startX + j * gapX; let py = startY + i * gapY;
-            peg.style.left = px + 'px'; peg.style.top = py + 'px';
-            board.appendChild(peg); pegCoords.push({x: px, y: py});
-        }
-    }
-    plinkoRisks[risk].forEach(v => {
-        let m = document.createElement('div'); m.className='plinko-mult'; m.innerText=v+'x';
-        if(v >= 10) m.className += ' high-pay'; else if(v < 1) m.className += ' low-pay'; else m.style.background = '#444';
-        multsDiv.appendChild(m);
-    });
-}
-function playPlinko() {
-    const bet = getBet('bet-plinko'); if(!bet) return;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); dropBall(bet);
-}
-function dropBall(bet) {
-    const board = document.getElementById('plinko-board');
-    const ball = document.createElement('div'); ball.className='plinko-ball';
-    board.appendChild(ball);
-    let x = 160; let y = 0; let vx = (Math.random() - 0.5) * 1; let vy = 0;
-    const gravity = 0.25; const friction = 0.98; const bounce = 0.6;
-    let interval = setInterval(() => {
-        vy += gravity; vx *= friction; x += vx; y += vy;
-        for(let p of pegCoords) {
-            let dx = x - p.x; let dy = y - p.y;
-            if (dx*dx + dy*dy < 80) { // Collision
-                let angle = Math.atan2(dy, dx);
-                let speed = Math.sqrt(vx*vx + vy*vy);
-                vx = Math.cos(angle) * speed * bounce + (Math.random() - 0.5) * 1.5;
-                vy = Math.sin(angle) * speed * bounce;
-                x += vx; y += vy;
-            }
-        }
-        if(x < 5) { x=5; vx = -vx * 0.6; } if(x > 315) { x=315; vx = -vx * 0.6; }
-        ball.style.top = y + 'px'; ball.style.left = x + 'px';
-        if (y > 250) {
-            clearInterval(interval); ball.remove();
-            let bucket = Math.floor(x / (320/9)); if (bucket < 0) bucket = 0; if (bucket > 8) bucket = 8;
-            const risk = document.getElementById('plinko-risk').value;
-            const mult = plinkoRisks[risk][bucket];
-            const win = Math.floor(bet * mult);
-            balance += win; updateBalanceUI(); updateStats(win > bet); if(win > 0) showBalanceLog(win);
-            const msg = document.getElementById('plinko-msg');
-            msg.innerText = `x${mult} | ${win}$`; msg.style.color = mult >= 1 ? '#4CAF50' : '#F44336';
-        }
-    }, 16);
-}
-
-/* ================= ROCKET ================= */
-let rocketTimer, rocketMult=1.00, currentRocketBet = 0;
-function playRocket() {
-    if(isGameActive) return;
-    const bet = getBet('bet-rocket'); if(!bet) return;
-    currentRocketBet = bet; balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true;
-    document.getElementById('btn-rocket-play').classList.add('hidden');
-    document.getElementById('btn-rocket-cashout').classList.remove('hidden');
-    document.getElementById('rocket-status-text').innerText = "FLYING...";
-    document.getElementById('rocket-status-text').style.color = "#FFD700";
-    const rocketObj = document.getElementById('rocket-obj');
-    const rocketIcon = document.getElementById('rocket-icon');
-    const svgLine = document.getElementById('rocket-line');
-    const particles = document.getElementById('rocket-particles');
-    particles.innerHTML = ''; rocketMult = 1.00;
-    rocketObj.style.left = '0%'; rocketObj.style.bottom = '0%'; 
-    rocketIcon.innerText = '🚀'; rocketIcon.style.transform = 'rotate(0deg)';
-    svgLine.setAttribute('d', 'M0,100'); 
-    let time = 0; let maxX = 100; let maxY = 100; 
-    rocketTimer = setInterval(() => {
-        time += 0.05; rocketMult += 0.001 * Math.exp(time * 0.12);
-        document.getElementById('rocket-multiplier-center').innerText = rocketMult.toFixed(2)+'x';
-        let rawX = time * 10; let rawY = Math.pow(time, 2.2) * 0.5;
-        if (rawX > maxX * 0.8) maxX = rawX / 0.8; if (rawY > maxY * 0.8) maxY = rawY / 0.8;
-        let cssX = (rawX / maxX) * 100; let cssY = (rawY / maxY) * 100;
-        rocketObj.style.left = cssX + '%'; rocketObj.style.bottom = cssY + '%';
-        let pTime = time - 0.05; let pX = pTime * 10; let pY = Math.pow(pTime, 2.2) * 0.5;
-        let angle = Math.atan2(rawY-pY, rawX-pX) * 180 / Math.PI; 
-        rocketIcon.style.transform = `rotate(${angle-15}deg)`;
-        let svg = document.getElementById('rocket-svg'); svg.setAttribute('viewBox', `0 0 ${maxX} ${maxY}`);
-        let svgY = maxY - rawY; let d = svgLine.getAttribute('d'); if(d === 'M0,100') d = `M0,${maxY}`; 
-        svgLine.setAttribute('d', d + ` L${rawX},${svgY}`);
-        if(Math.random()>0.5) {
-            let p = document.createElement('div'); p.className='particle';
-            p.style.left = cssX+'%'; p.style.bottom = cssY+'%';
-            particles.appendChild(p); setTimeout(()=>p.remove(),800);
-        }
-        if(Math.random() < 0.002 * rocketMult) crashRocket();
-    }, 20);
-}
-function crashRocket() {
-    clearInterval(rocketTimer); isGameActive = false; updateStats(false);
-    document.getElementById('rocket-icon').innerText = '💥';
-    document.getElementById('rocket-status-text').innerText = "CRASHED";
-    document.getElementById('rocket-status-text').style.color = "red";
-    document.getElementById('btn-rocket-play').classList.remove('hidden');
-    document.getElementById('btn-rocket-cashout').classList.add('hidden');
-}
-function cashoutRocket() {
-    if(!isGameActive) return;
-    clearInterval(rocketTimer); isGameActive = false; updateStats(true);
-    let win = Math.floor(currentRocketBet * rocketMult);
-    balance += win; updateBalanceUI(); showBalanceLog(win);
-    document.getElementById('rocket-status-text').innerText = `WON +${win}`;
-    document.getElementById('rocket-status-text').style.color = "#4CAF50";
-    document.getElementById('btn-rocket-play').classList.remove('hidden');
-    document.getElementById('btn-rocket-cashout').classList.add('hidden');
-}
-
 /* ================= TOWER ================= */
 let towerLevel = 0, towerPot = 0; const towerMults = [1.5, 2.3, 3.5, 6.0, 10.0];
 function initTower() {
-    const grid = document.getElementById('tower-grid'); grid.innerHTML = '';
+    const grid = document.getElementById('tower-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
     for(let i=0; i<5; i++) {
         let row = document.createElement('div'); row.className = 'tower-row';
         for(let j=0; j<3; j++) {
@@ -276,6 +360,50 @@ function cashoutTower() {
     document.getElementById('btn-tower-play').classList.remove('hidden');
     document.getElementById('btn-tower-cashout').classList.add('hidden');
     document.getElementById('tower-msg').innerText = `WON ${towerPot}$`;
+}
+
+/* ================= KENO ================= */
+let kenoSel = [];
+function initKeno() {
+    const grid = document.getElementById('keno-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=1; i<=40; i++) {
+        let c = document.createElement('div'); c.className='keno-cell'; c.innerText=i;
+        c.onclick = () => selectKeno(c, i);
+        grid.appendChild(c);
+    }
+}
+function selectKeno(el, num) {
+    if(isGameActive) return;
+    if(kenoSel.includes(num)) {
+        kenoSel = kenoSel.filter(n=>n!==num); el.classList.remove('selected');
+    } else {
+        if(kenoSel.length>=10) return;
+        kenoSel.push(num); el.classList.add('selected');
+    }
+    document.getElementById('keno-count').innerText = kenoSel.length;
+}
+function playKeno() {
+    if(isGameActive || kenoSel.length===0) return;
+    const bet = getBet('bet-keno'); if(!bet) return;
+    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive=true;
+    document.querySelectorAll('.keno-cell').forEach(c=>c.classList.remove('hit','miss'));
+    let draw = []; while(draw.length<10) { let n = Math.floor(Math.random()*40)+1; if(!draw.includes(n)) draw.push(n); }
+    let hits = 0; let i=0;
+    let timer = setInterval(() => {
+        let n = draw[i]; let el = document.querySelectorAll('.keno-cell')[n-1];
+        if(kenoSel.includes(n)) { el.classList.add('hit'); hits++; } else { el.classList.add('miss'); }
+        i++;
+        if(i>=10) {
+            clearInterval(timer);
+            let mult = 0; if(hits>=2) mult = hits; 
+            let win = bet * mult; balance+=win; updateBalanceUI(); updateStats(win>0);
+            if(win > 0) showBalanceLog(win);
+            document.getElementById('keno-msg').innerText = `Hits: ${hits} | Won: ${win}$`;
+            isGameActive=false;
+        }
+    }, 100);
 }
 
 /* ================= WHEEL ================= */
@@ -367,6 +495,97 @@ function updateMinesUI() {
     el.innerText = minesPot + ' $'; el.style.color = '#FFD700';
 }
 
+/* ================= SLOTS ================= */
+let isSlotSpinning = false;
+function playSlots() {
+    if(isSlotSpinning) return;
+    const bet=getBet('bet-slots'); if(!bet)return;
+    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isSlotSpinning=true;
+    const cols = [document.getElementById('col1'),document.getElementById('col2'),document.getElementById('col3')];
+    const s=['🍒','7️⃣','💎','🍇','🍋'];
+    let i=0;
+    let t=setInterval(()=>{
+        cols.forEach(c=>{c.innerText=s[Math.floor(Math.random()*s.length)]; c.classList.add('blur-spin');});
+        i++; if(i>15) {
+            clearInterval(t); cols.forEach(c=>c.classList.remove('blur-spin'));
+            let r1=cols[0].innerText, r2=cols[1].innerText, r3=cols[2].innerText;
+            let win=0;
+            if(r1===r2 && r2===r3) win=bet*10; else if(r1===r2 || r2===r3 || r1===r3) win=bet*2;
+            balance+=win; updateBalanceUI(); updateStats(win>0); if(win>0) showBalanceLog(win);
+            isSlotSpinning=false;
+            document.getElementById('slots-result').innerText = win>0 ? `WON ${win}$` : "No Luck";
+        }
+    }, 80);
+}
+
+/* ================= DICE ================= */
+let isDiceRolling = false;
+function playDice(high) {
+    if(isDiceRolling) return;
+    const bet=getBet('bet-dice'); if(!bet)return;
+    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isDiceRolling=true;
+    const cube = document.getElementById('dice-cube');
+    let roll = Math.floor(Math.random()*6)+1;
+    let rx = Math.random()*720+720; let ry = Math.random()*720+720;
+    cube.style.transition = "transform 1s cubic-bezier(0.2,0.8,0.2,1)";
+    cube.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    setTimeout(()=>{
+        const rots={1:[0,0],2:[0,-90],3:[0,-180],4:[0,90],5:[-90,0],6:[90,0]};
+        cube.style.transition="transform 0.5s ease-out";
+        cube.style.transform=`rotateX(${rots[roll][0]}deg) rotateY(${rots[roll][1]}deg)`;
+        setTimeout(()=>{
+            let win = (high && roll>3) || (!high && roll<=3);
+            if(win) { balance+=bet*2; showBalanceLog(bet*2); }
+            updateBalanceUI(); updateStats(win); isDiceRolling=false;
+            document.getElementById('dice-msg').innerText = win ? `WIN (${roll})` : `LOSE (${roll})`;
+        },500);
+    },1000);
+}
+
+/* ================= COIN ================= */
+let isCoinFlipping = false;
+function playCoin(choice) {
+    if(isCoinFlipping) return;
+    const bet=getBet('bet-coin'); if(!bet)return;
+    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isCoinFlipping=true;
+    const coin=document.getElementById('coin');
+    let heads = Math.random()<0.5;
+    coin.style.transition='none'; coin.style.transform='rotateY(0deg)';
+    setTimeout(()=>{
+        coin.style.transition='transform 2s ease-out';
+        coin.style.transform=`rotateY(${heads?1800:1980}deg)`;
+    },50);
+    setTimeout(()=>{
+        let win = (choice==='heads' && heads) || (choice==='tails' && !heads);
+        if(win) { balance+=bet*2; showBalanceLog(bet*2); }
+        updateBalanceUI(); updateStats(win); isCoinFlipping=false;
+        document.getElementById('coin-msg').innerText = win ? "YOU WON" : "YOU LOST";
+    },2000);
+}
+
+/* ================= LIMBO ================= */
+function playLimbo() {
+    let target = parseFloat(document.getElementById('limbo-target').value); if(target < 1.01) return;
+    const bet = getBet('bet-limbo'); if(!bet) return;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet);
+    let display = document.getElementById('limbo-result');
+    let result = 0.99 / Math.random(); if(result>10000) result=10000;
+    display.style.color = "#fff";
+    let ticks = 0;
+    let timer = setInterval(() => {
+        display.innerText = (Math.random() * 100).toFixed(2) + "x"; ticks++;
+        if(ticks > 5) {
+            clearInterval(timer);
+            display.innerText = result.toFixed(2) + "x";
+            if(result >= target) {
+                let win = Math.floor(bet * target);
+                balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
+                display.style.color = "#4CAF50";
+            } else { display.style.color = "#F44336"; updateStats(false); }
+        }
+    }, 50);
+}
+
 /* ================= HI-LO ================= */
 const suits = ['♠', '♥', '♦', '♣']; const ranks = {11:'J', 12:'Q', 13:'K', 14:'A'};
 let currentCard = null, hiloBet = 0, hiloPot = 0;
@@ -413,11 +632,9 @@ function guessHiLo(choice) {
         let mult = (total / chance) * 0.94;
         hiloPot = Math.floor(hiloPot * mult);
         document.getElementById('hilo-info').innerText = "Correct! " + hiloPot + "$";
-        document.getElementById('hilo-info').style.color = "#4CAF50";
         updateHiLoRates();
     } else {
         document.getElementById('hilo-info').innerText = "WRONG! Lost " + hiloBet + "$";
-        document.getElementById('hilo-info').style.color = "#F44336";
         resetHiLo();
     }
 }
@@ -430,91 +647,4 @@ function resetHiLo() {
     document.getElementById('btn-hilo-start').style.display = 'block';
     document.getElementById('hilo-controls').style.display = 'none';
     isGameActive = false;
-}
-
-/* ================= LIMBO ================= */
-function playLimbo() {
-    let target = parseFloat(document.getElementById('limbo-target').value); if(target < 1.01) return;
-    const bet = getBet('bet-limbo'); if(!bet) return;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet);
-    let display = document.getElementById('limbo-result');
-    let result = 0.99 / Math.random(); if(result>10000) result=10000;
-    display.style.color = "#fff";
-    let ticks = 0;
-    let timer = setInterval(() => {
-        display.innerText = (Math.random() * 100).toFixed(2) + "x"; ticks++;
-        if(ticks > 5) {
-            clearInterval(timer);
-            display.innerText = result.toFixed(2) + "x";
-            if(result >= target) {
-                let win = Math.floor(bet * target);
-                balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
-                display.style.color = "#4CAF50";
-            } else { display.style.color = "#F44336"; updateStats(false); }
-        }
-    }, 50);
-}
-
-/* ================= SLOTS, DICE, COIN ================= */
-let isSlotSpinning = false;
-function playSlots() {
-    if(isSlotSpinning) return;
-    const bet=getBet('bet-slots'); if(!bet)return;
-    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isSlotSpinning=true;
-    const cols = [document.getElementById('col1'),document.getElementById('col2'),document.getElementById('col3')];
-    const s=['🍒','7️⃣','💎','🍇','🍋'];
-    let i=0;
-    let t=setInterval(()=>{
-        cols.forEach(c=>{c.innerText=s[Math.floor(Math.random()*s.length)]; c.classList.add('blur-spin');});
-        i++; if(i>15) {
-            clearInterval(t); cols.forEach(c=>c.classList.remove('blur-spin'));
-            let r1=cols[0].innerText, r2=cols[1].innerText, r3=cols[2].innerText;
-            let win=0;
-            if(r1===r2 && r2===r3) win=bet*10; else if(r1===r2 || r2===r3 || r1===r3) win=bet*2;
-            balance+=win; updateBalanceUI(); updateStats(win>0); if(win>0) showBalanceLog(win);
-            isSlotSpinning=false;
-            document.getElementById('slots-result').innerText = win>0 ? `WON ${win}$` : "No Luck";
-        }
-    }, 80);
-}
-let isDiceRolling = false;
-function playDice(high) {
-    if(isDiceRolling) return;
-    const bet=getBet('bet-dice'); if(!bet)return;
-    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isDiceRolling=true;
-    const cube = document.getElementById('dice-cube');
-    let roll = Math.floor(Math.random()*6)+1;
-    let rx = Math.random()*720+720; let ry = Math.random()*720+720;
-    cube.style.transition = "transform 1s cubic-bezier(0.2,0.8,0.2,1)";
-    cube.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-    setTimeout(()=>{
-        const rots={1:[0,0],2:[0,-90],3:[0,-180],4:[0,90],5:[-90,0],6:[90,0]};
-        cube.style.transition="transform 0.5s ease-out";
-        cube.style.transform=`rotateX(${rots[roll][0]}deg) rotateY(${rots[roll][1]}deg)`;
-        setTimeout(()=>{
-            let win = (high && roll>3) || (!high && roll<=3);
-            if(win) { balance+=bet*2; showBalanceLog(bet*2); }
-            updateBalanceUI(); updateStats(win); isDiceRolling=false;
-            document.getElementById('dice-msg').innerText = win ? `WIN (${roll})` : `LOSE (${roll})`;
-        },500);
-    },1000);
-}
-let isCoinFlipping = false;
-function playCoin(choice) {
-    if(isCoinFlipping) return;
-    const bet=getBet('bet-coin'); if(!bet)return;
-    balance-=bet; updateBalanceUI(); showBalanceLog(-bet); isCoinFlipping=true;
-    const coin=document.getElementById('coin');
-    let heads = Math.random()<0.5;
-    coin.style.transition='none'; coin.style.transform='rotateY(0deg)';
-    setTimeout(()=>{
-        coin.style.transition='transform 2s ease-out';
-        coin.style.transform=`rotateY(${heads?1800:1980}deg)`;
-    },50);
-    setTimeout(()=>{
-        let win = (choice==='heads' && heads) || (choice==='tails' && !heads);
-        if(win) { balance+=bet*2; showBalanceLog(bet*2); }
-        updateBalanceUI(); updateStats(win); isCoinFlipping=false;
-        document.getElementById('coin-msg').innerText = win ? "YOU WON" : "YOU LOST";
-    },2000);
 }
