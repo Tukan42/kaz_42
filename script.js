@@ -10,10 +10,12 @@ let isGameActive = false;
 window.onload = function() {
     updateBalanceUI();
     generateBackground();
-    // FORCE INIT ALL GAMES
-    initKeno();
-    updatePlinkoRisk();
-    initTower();
+    // FORCE INIT
+    setTimeout(() => {
+        initKeno();
+        updatePlinkoRisk();
+        initTower();
+    }, 100);
 };
 
 function generateBackground() {
@@ -30,17 +32,31 @@ function updateBalanceUI() {
     document.getElementById('balance-display').innerText = balance;
     document.getElementById('profile-balance-view').innerText = balance;
 }
-function showMenu() { if(isGameActive && !confirm("Game in progress. Leave?")) return; hideAll(); document.getElementById('menu-section').classList.add('active'); }
+function showMenu() { 
+    if(isGameActive) return; 
+    hideAll(); document.getElementById('menu-section').classList.add('active'); 
+}
 function showProfile() { if(isGameActive) return; hideAll(); document.getElementById('profile-section').classList.add('active'); updateBalanceUI(); }
 function openGame(id) { 
+    if(isGameActive) return;
     hideAll(); 
     document.getElementById('game-'+id).classList.add('active');
-    // Ensure render on open
-    if(id === 'plinko') setTimeout(updatePlinkoRisk, 50);
-    if(id === 'tower') setTimeout(initTower, 50);
-    if(id === 'keno') setTimeout(initKeno, 50);
+    setTimeout(() => {
+        if(id==='plinko') updatePlinkoRisk();
+        if(id==='tower') initTower();
+        if(id==='keno') initKeno();
+    }, 50);
 }
 function hideAll() { document.querySelectorAll('main, section').forEach(el => { el.classList.remove('active'); el.classList.add('hidden'); }); }
+
+// --- CUSTOM MODAL & LOGS ---
+function showError(msg) {
+    document.getElementById('error-text').innerText = msg;
+    document.getElementById('error-modal').classList.remove('hidden');
+}
+function closeError() {
+    document.getElementById('error-modal').classList.add('hidden');
+}
 
 function showBalanceLog(amount) {
     const display = document.getElementById('balance-display');
@@ -52,15 +68,204 @@ function showBalanceLog(amount) {
     el.style.left = (rect.left + 20) + 'px'; el.style.top = rect.top + 'px';
     document.body.appendChild(el); setTimeout(() => el.remove(), 1000);
 }
-function addBalance() { const val = parseInt(document.getElementById('add-balance-input').value); if(val>0){balance+=val; updateBalanceUI(); showBalanceLog(val); document.getElementById('add-balance-input').value = '';}}
+function addBalance() { 
+    const val = parseInt(document.getElementById('add-balance-input').value); 
+    if(val>0){balance+=val; updateBalanceUI(); showBalanceLog(val); document.getElementById('add-balance-input').value = '';}
+}
 function adjustBet(id, amt) { let el = document.getElementById(id); let val = parseInt(el.value)||0; val+=amt; if(val>balance) val=balance; el.value=val; }
 function setMaxBet(id) { document.getElementById(id).value = balance; }
-function getBet(id) { const val = parseInt(document.getElementById(id).value); if(isNaN(val)||val<=0){alert('Invalid bet');return null;} if(val>balance){alert('Funds low');return null;} return val; }
+function getBet(id) { 
+    const val = parseInt(document.getElementById(id).value); 
+    if(isNaN(val)||val<=0){ showError('Неверная ставка'); return null;} 
+    if(val>balance){ showError('Недостаточно средств'); return null;} 
+    return val; 
+}
 function updateStats(win) { stats.games++; if(win) stats.wins++; else stats.losses++; document.getElementById('stat-total').innerText=stats.games; document.getElementById('stat-wins').innerText=stats.wins; document.getElementById('stat-losses').innerText=stats.losses; }
 
-/* ================= ROCKET (PARABOLA + INFINITE ZOOM) ================= */
+/* ================= WHEEL (FIXED SPIN) ================= */
+let wheelSpinning = false;
+let currentRotation = 0;
+
+function playWheel(multiplier) {
+    if(isGameActive || wheelSpinning) return;
+    const bet = getBet('bet-wheel'); if(!bet) return;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true; wheelSpinning = true;
+    
+    const wheel = document.getElementById('wheel-circle');
+    
+    let chance = 0;
+    if(multiplier === 2) chance = 0.45;
+    else if(multiplier === 3) chance = 0.30;
+    else if(multiplier === 5) chance = 0.15;
+    else if(multiplier === 50) chance = 0.02;
+    
+    let isWin = Math.random() < chance;
+    let targetAngle = 0;
+    
+    if(isWin) {
+        if(multiplier===2) targetAngle = randInt(0, 90);
+        else if(multiplier===3) targetAngle = randInt(90, 180);
+        else if(multiplier===5) targetAngle = randInt(180, 270);
+        else targetAngle = randInt(270, 360);
+    } else {
+        do {
+            targetAngle = randInt(0, 360);
+            let accWin = false;
+            if(multiplier===2 && targetAngle<90) accWin=true;
+            if(multiplier===3 && targetAngle>=90 && targetAngle<180) accWin=true;
+            if(multiplier===5 && targetAngle>=180 && targetAngle<270) accWin=true;
+            if(multiplier===50 && targetAngle>=270) accWin=true;
+            if(!accWin) break;
+        } while(true);
+    }
+    
+    let spinAmount = 360 * 5 + (360 - targetAngle);
+    currentRotation += spinAmount; // Add to existing rotation
+    
+    wheel.style.transform = `rotate(${currentRotation}deg)`;
+    
+    setTimeout(() => {
+        if(isWin) {
+            let win = bet * multiplier;
+            balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
+            document.getElementById('wheel-msg').innerText = `WON ${win}$`;
+            document.getElementById('wheel-msg').style.color = "#4CAF50";
+        } else {
+            updateStats(false);
+            document.getElementById('wheel-msg').innerText = "LOST";
+            document.getElementById('wheel-msg').style.color = "#F44336";
+        }
+        wheelSpinning = false; isGameActive = false;
+    }, 4000);
+}
+function randInt(min, max) { return Math.floor(Math.random() * (max - min) + min); }
+
+/* ================= DIAMONDS (FIXED FLIP) ================= */
+const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴', '🟣', '⚫']; 
+function playDiamonds() {
+    if(isGameActive) return;
+    const bet = getBet('bet-diamonds'); if(!bet) return;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true;
+    document.querySelectorAll('.payout-item').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.gem-box').forEach(e => e.classList.remove('win'));
+    document.getElementById('diamonds-msg').innerText = "Spinning...";
+    
+    let res = []; for(let i=0; i<5; i++) res.push(gems[Math.floor(Math.random() * gems.length)]);
+    
+    // Animate flip
+    for(let i=1; i<=5; i++) {
+        let el = document.getElementById('gem'+i);
+        el.style.transform = "rotateY(90deg)"; // Hide
+        setTimeout(() => {
+            el.innerText = res[i-1];
+            el.style.transform = "rotateY(0deg)"; // Show
+        }, 200 + (i*100));
+    }
+    setTimeout(() => { checkDiamondsWin(res, bet); }, 1000);
+}
+function checkDiamondsWin(arr, bet) {
+    let counts = {}; arr.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
+    let max = 0; for(let k in counts) if(counts[k] > max) max = counts[k];
+    let mult = 0; let elId = "";
+    if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 5; elId="pay-4"; } 
+    else if(max === 2) { 
+        let pairs = 0; for(let k in counts) if(counts[k] === 2) pairs++;
+        if(pairs >= 2) { mult = 2; elId="pay-3"; } else { mult = 1.2; elId="pay-2"; }
+    }
+    if(mult > 0) {
+        let win = Math.floor(bet * mult); balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
+        document.getElementById('diamonds-msg').innerText = `WON ${win}$ (x${mult})`;
+        document.getElementById('diamonds-msg').style.color = "#4CAF50";
+        if(elId && document.getElementById(elId)) document.getElementById(elId).classList.add('active');
+        for(let i=0; i<5; i++) if(counts[arr[i]] >= 2) document.getElementById('gb'+(i+1)).classList.add('win');
+    } else {
+        document.getElementById('diamonds-msg').innerText = "No match";
+        document.getElementById('diamonds-msg').style.color = "#888";
+        updateStats(false);
+    }
+    isGameActive = false;
+}
+
+/* ================= TOWER (FIXED DOORS) ================= */
+let towerLevel = 0, towerPot = 0; const towerMults = [1.5, 2.3, 3.5, 6.0, 10.0];
+function initTower() {
+    const grid = document.getElementById('tower-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=0; i<5; i++) {
+        let row = document.createElement('div'); row.className = 'tower-row';
+        for(let j=0; j<3; j++) {
+            let cell = document.createElement('div'); cell.className = 'tower-cell disabled';
+            cell.innerText = '❓'; 
+            cell.onclick = () => clickTower(i, j, cell);
+            row.appendChild(cell);
+        } grid.appendChild(row);
+    }
+}
+function playTower() {
+    if(isGameActive) return;
+    const bet = getBet('bet-tower'); if(!bet) return;
+    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true;
+    towerLevel = 0; towerPot = bet;
+    document.getElementById('btn-tower-play').classList.add('hidden');
+    document.getElementById('btn-tower-cashout').classList.remove('hidden');
+    document.getElementById('tower-msg').innerText = "Choose a tile";
+    
+    // Force reset visuals
+    const rows = document.querySelectorAll('.tower-row');
+    rows.forEach(r => r.querySelectorAll('.tower-cell').forEach(c => { 
+        c.className = 'tower-cell disabled'; c.innerText = '❓'; 
+    }));
+    enableTowerRow(0);
+}
+function enableTowerRow(level) {
+    const rows = document.querySelectorAll('.tower-row'); if(level >= 5) return;
+    rows[level].querySelectorAll('.tower-cell').forEach(c => c.className = 'tower-cell');
+    document.querySelectorAll('.tower-level').forEach(l => l.classList.remove('active-level'));
+    document.querySelectorAll('.tower-level')[level].classList.add('active-level');
+}
+function clickTower(rowIdx, colIdx, cell) {
+    if(!isGameActive || rowIdx !== towerLevel) return;
+    if(cell.classList.contains('safe') || cell.classList.contains('bomb')) return;
+    let isBomb = Math.random() < 0.33;
+    if(isBomb) {
+        cell.className = 'tower-cell bomb'; cell.innerText = '💀';
+        isGameActive = false; updateStats(false);
+        document.getElementById('tower-msg').innerText = "GAME OVER";
+        document.getElementById('btn-tower-play').classList.remove('hidden');
+        document.getElementById('btn-tower-cashout').classList.add('hidden');
+        cell.parentElement.querySelectorAll('.tower-cell').forEach(c => { if(c !== cell) { c.className = 'tower-cell safe'; c.innerText = '💎'; } });
+    } else {
+        cell.className = 'tower-cell safe'; cell.innerText = '💎';
+        let mult = towerMults[towerLevel]; towerPot = Math.floor(getBet('bet-tower') * mult); 
+        document.getElementById('tower-msg').innerText = `Potential: ${towerPot}$`;
+        towerLevel++; if(towerLevel >= 5) { cashoutTower(); } else { enableTowerRow(towerLevel); }
+    }
+}
+function cashoutTower() {
+    if(!isGameActive) return;
+    balance += towerPot; updateBalanceUI(); showBalanceLog(towerPot);
+    isGameActive = false; updateStats(true);
+    document.getElementById('btn-tower-play').classList.remove('hidden');
+    document.getElementById('btn-tower-cashout').classList.add('hidden');
+    document.getElementById('tower-msg').innerText = `WON ${towerPot}$`;
+}
+
+/* ================= ROCKET (PARABOLA REWORKED) ================= */
 let rocketTimer, rocketMult=1.00;
 let currentRocketBet = 0; 
+
+function resetRocketState() {
+    clearInterval(rocketTimer);
+    isGameActive = false;
+    document.getElementById('btn-rocket-play').classList.remove('hidden');
+    document.getElementById('btn-rocket-cashout').classList.add('hidden');
+    document.getElementById('rocket-status-text').innerText = "WAITING";
+    document.getElementById('rocket-status-text').style.color = "#fff";
+    document.getElementById('rocket-obj').style.left = '0%';
+    document.getElementById('rocket-obj').style.bottom = '0%';
+    document.getElementById('rocket-multiplier-center').innerText = "1.00x";
+}
 
 function playRocket() {
     if(isGameActive) return;
@@ -80,7 +285,9 @@ function playRocket() {
     particles.innerHTML = ''; rocketMult = 1.00;
     rocketObj.style.left = '0%'; rocketObj.style.bottom = '0%'; 
     rocketIcon.innerText = '🚀'; rocketIcon.style.transform = 'rotate(0deg)';
-    svgLine.setAttribute('d', 'M0,100'); 
+    
+    let pathData = "M0,300"; 
+    svgLine.setAttribute('d', pathData);
 
     let time = 0;
     let maxX = 100; let maxY = 100; 
@@ -90,12 +297,11 @@ function playRocket() {
         rocketMult += 0.001 * Math.exp(time * 0.12);
         document.getElementById('rocket-multiplier-center').innerText = rocketMult.toFixed(2)+'x';
 
-        // Pure Parabola: Y = X^2 (Smooth curve)
+        // Coordinates
         let rawX = time * 10; 
         let rawY = Math.pow(time, 2.2) * 0.5;
 
-        // Auto-Scale (Infinite Zoom Out)
-        // Ensure rocket stays within 80% of view area
+        // INFINITE ZOOM LOGIC
         if (rawX > maxX * 0.8) maxX = rawX / 0.8;
         if (rawY > maxY * 0.8) maxY = rawY / 0.8;
 
@@ -105,19 +311,19 @@ function playRocket() {
         rocketObj.style.left = cssX + '%';
         rocketObj.style.bottom = cssY + '%';
 
-        // Angle Calculation
+        // Angle
         let pTime = time - 0.05;
         let pX = pTime * 10; let pY = Math.pow(pTime, 2.2) * 0.5;
         let angle = Math.atan2(rawY-pY, rawX-pX) * 180 / Math.PI; 
         rocketIcon.style.transform = `rotate(${angle-15}deg)`;
 
-        // Draw Line
+        // Update SVG Path with scaling
         let svg = document.getElementById('rocket-svg');
         svg.setAttribute('viewBox', `0 0 ${maxX} ${maxY}`);
-        let svgY = maxY - rawY; // Invert for SVG
-        let d = svgLine.getAttribute('d');
-        if(d === 'M0,100' || d === 'M0,300') d = `M0,${maxY}`; 
-        svgLine.setAttribute('d', d + ` L${rawX},${svgY}`);
+        
+        let svgY = maxY - rawY; // Invert Y
+        pathData += ` L${rawX},${svgY}`;
+        svgLine.setAttribute('d', pathData);
 
         // Particles
         if(Math.random()>0.5) {
@@ -150,7 +356,7 @@ function cashoutRocket() {
     document.getElementById('btn-rocket-cashout').classList.add('hidden');
 }
 
-/* ================= PLINKO ================= */
+/* ================= PLINKO (FIXED PEGS) ================= */
 const plinkoRows = 8;
 const plinkoRisks = {
     low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
@@ -186,6 +392,8 @@ function updatePlinkoRisk() {
             peg.style.left = px + 'px';
             peg.style.top = py + 'px';
             board.appendChild(peg);
+            
+            // Store world coords for physics
             pegCoords.push({x: px, y: py});
         }
     }
@@ -220,11 +428,12 @@ function dropBall(bet) {
         vy += gravity; vx *= friction;
         x += vx; y += vy;
 
+        // Collision Check
         for(let p of pegCoords) {
             let dx = x - p.x;
             let dy = y - p.y;
             let distSq = dx*dx + dy*dy;
-            if (distSq < 80) { // Collision
+            if (distSq < 80) { // Hit
                 let angle = Math.atan2(dy, dx);
                 let speed = Math.sqrt(vx*vx + vy*vy);
                 vx = Math.cos(angle) * speed * bounce + (Math.random() - 0.5) * 1.5;
@@ -233,6 +442,7 @@ function dropBall(bet) {
             }
         }
 
+        // Walls
         if(x < 5) { x=5; vx = -vx * 0.6; }
         if(x > 315) { x=315; vx = -vx * 0.6; }
 
@@ -242,8 +452,7 @@ function dropBall(bet) {
         if (y > 250) {
             clearInterval(interval);
             ball.remove();
-            let bucketW = 320 / 9;
-            let bucket = Math.floor(x / bucketW);
+            let bucket = Math.floor(x / (320/9));
             if (bucket < 0) bucket = 0; if (bucket > 8) bucket = 8;
             
             const risk = document.getElementById('plinko-risk').value;
@@ -258,106 +467,6 @@ function dropBall(bet) {
             msg.style.color = mult >= 1 ? '#4CAF50' : '#F44336';
         }
     }, 16);
-}
-
-/* ================= DIAMONDS ================= */
-const gems = ['💎', '💍', '🔮', '🔶', '🟢', '🔴', '🟣', '⚫']; 
-function playDiamonds() {
-    if(isGameActive) return;
-    const bet = getBet('bet-diamonds'); if(!bet) return;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true;
-    document.querySelectorAll('.payout-item').forEach(e => e.classList.remove('active'));
-    document.querySelectorAll('.gem-box').forEach(e => e.classList.remove('win'));
-    document.getElementById('diamonds-msg').innerText = "Spinning...";
-    let res = []; for(let i=0; i<5; i++) res.push(gems[Math.floor(Math.random() * gems.length)]);
-    for(let i=1; i<=5; i++) {
-        let el = document.getElementById('gem'+i); el.style.transform = "rotateY(90deg)";
-        setTimeout(() => { el.innerText = res[i-1]; el.style.transform = "rotateY(0deg)"; }, 100 + (i*80));
-    }
-    setTimeout(() => { checkDiamondsWin(res, bet); }, 800);
-}
-function checkDiamondsWin(arr, bet) {
-    let counts = {}; arr.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
-    let max = 0; for(let k in counts) if(counts[k] > max) max = counts[k];
-    let mult = 0; let elId = "";
-    if(max === 5) { mult = 50; elId="pay-5"; } else if(max === 4) { mult = 10; elId="pay-4"; } else if(max === 3) { mult = 5; elId="pay-4"; } 
-    else if(max === 2) { 
-        let pairs = 0; for(let k in counts) if(counts[k] === 2) pairs++;
-        if(pairs >= 2) { mult = 2; elId="pay-3"; } 
-        else { mult = 1.2; elId="pay-2"; }
-    }
-    if(mult > 0) {
-        let win = Math.floor(bet * mult); balance += win; updateBalanceUI(); showBalanceLog(win); updateStats(true);
-        document.getElementById('diamonds-msg').innerText = `WON ${win}$ (x${mult})`;
-        document.getElementById('diamonds-msg').style.color = "#4CAF50";
-        if(elId && document.getElementById(elId)) document.getElementById(elId).classList.add('active');
-        for(let i=0; i<5; i++) if(counts[arr[i]] >= 2) document.getElementById('gb'+(i+1)).classList.add('win');
-    } else {
-        document.getElementById('diamonds-msg').innerText = "No match";
-        document.getElementById('diamonds-msg').style.color = "#888";
-        updateStats(false);
-    }
-    isGameActive = false;
-}
-
-/* ================= TOWER ================= */
-let towerLevel = 0, towerPot = 0; const towerMults = [1.5, 2.3, 3.5, 6.0, 10.0];
-function initTower() {
-    const grid = document.getElementById('tower-grid');
-    if(!grid) return;
-    grid.innerHTML = '';
-    for(let i=0; i<5; i++) {
-        let row = document.createElement('div'); row.className = 'tower-row';
-        for(let j=0; j<3; j++) {
-            let cell = document.createElement('div'); cell.className = 'tower-cell disabled';
-            cell.innerText = '❓'; cell.onclick = () => clickTower(i, j, cell);
-            row.appendChild(cell);
-        } grid.appendChild(row);
-    }
-}
-function playTower() {
-    if(isGameActive) return;
-    const bet = getBet('bet-tower'); if(!bet) return;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true;
-    towerLevel = 0; towerPot = bet;
-    document.getElementById('btn-tower-play').classList.add('hidden');
-    document.getElementById('btn-tower-cashout').classList.remove('hidden');
-    document.getElementById('tower-msg').innerText = "Choose a tile";
-    const rows = document.querySelectorAll('.tower-row');
-    rows.forEach(r => r.querySelectorAll('.tower-cell').forEach(c => { c.className = 'tower-cell disabled'; c.innerText = '❓'; }));
-    enableTowerRow(0);
-}
-function enableTowerRow(level) {
-    const rows = document.querySelectorAll('.tower-row'); if(level >= 5) return;
-    rows[level].querySelectorAll('.tower-cell').forEach(c => c.className = 'tower-cell');
-    document.querySelectorAll('.tower-level').forEach(l => l.classList.remove('active-level'));
-    document.querySelectorAll('.tower-level')[level].classList.add('active-level');
-}
-function clickTower(rowIdx, colIdx, cell) {
-    if(!isGameActive || rowIdx !== towerLevel) return;
-    if(cell.classList.contains('safe') || cell.classList.contains('bomb')) return;
-    let isBomb = Math.random() < 0.33;
-    if(isBomb) {
-        cell.className = 'tower-cell bomb'; cell.innerText = '💀';
-        isGameActive = false; updateStats(false);
-        document.getElementById('tower-msg').innerText = "GAME OVER";
-        document.getElementById('btn-tower-play').classList.remove('hidden');
-        document.getElementById('btn-tower-cashout').classList.add('hidden');
-        cell.parentElement.querySelectorAll('.tower-cell').forEach(c => { if(c !== cell) { c.className = 'tower-cell safe'; c.innerText = '💎'; } });
-    } else {
-        cell.className = 'tower-cell safe'; cell.innerText = '💎';
-        let mult = towerMults[towerLevel]; towerPot = Math.floor(getBet('bet-tower') * mult); 
-        document.getElementById('tower-msg').innerText = `Potential: ${towerPot}$`;
-        towerLevel++; if(towerLevel >= 5) { cashoutTower(); } else { enableTowerRow(towerLevel); }
-    }
-}
-function cashoutTower() {
-    if(!isGameActive) return;
-    balance += towerPot; updateBalanceUI(); showBalanceLog(towerPot);
-    isGameActive = false; updateStats(true);
-    document.getElementById('btn-tower-play').classList.remove('hidden');
-    document.getElementById('btn-tower-cashout').classList.add('hidden');
-    document.getElementById('tower-msg').innerText = `WON ${towerPot}$`;
 }
 
 /* ================= KENO ================= */
@@ -395,9 +504,13 @@ function playKeno() {
         i++;
         if(i>=10) {
             clearInterval(timer);
-            let mult = 0; if(hits>=2) mult = hits; 
-            let win = bet * mult; balance+=win; updateBalanceUI(); updateStats(win>0);
-            if(win > 0) showBalanceLog(win);
+            let mult = 0; 
+            if(hits === 4) mult = 1.5; 
+            else if(hits === 5) mult = 3;
+            else if(hits === 6) mult = 10;
+            else if(hits >= 7) mult = 50;
+            let win = Math.floor(bet * mult); 
+            if(win > 0) { balance+=win; updateBalanceUI(); showBalanceLog(win); updateStats(true); } else { updateStats(false); }
             document.getElementById('keno-msg').innerText = `Hits: ${hits} | Won: ${win}$`;
             isGameActive=false;
         }
@@ -457,40 +570,6 @@ function revealAllMines(isWin) {
 function updateMinesUI() {
     const el = document.getElementById('mines-potential-win');
     el.innerText = minesPot + ' $'; el.style.color = '#FFD700';
-}
-
-/* ================= WHEEL ================= */
-let wheelSpinning = false;
-function playWheel(multiplier) {
-    if(isGameActive || wheelSpinning) return;
-    const bet = getBet('bet-wheel'); if(!bet) return;
-    balance -= bet; updateBalanceUI(); showBalanceLog(-bet); isGameActive = true; wheelSpinning = true;
-    const wheel = document.getElementById('wheel-circle');
-    let extraSpins = 5 * 360; let finalAngle = Math.floor(Math.random() * 360);
-    wheel.style.transform = `rotate(${extraSpins + finalAngle}deg)`;
-    setTimeout(() => {
-        let actualAngle = (360 - (finalAngle % 360)) % 360;
-        let winningMult = 0;
-        if(actualAngle >= 0 && actualAngle < 90) winningMult = 2;
-        else if(actualAngle >= 90 && actualAngle < 180) winningMult = 3;
-        else if(actualAngle >= 180 && actualAngle < 270) winningMult = 5;
-        else if(actualAngle >= 270 && actualAngle < 360) winningMult = 50;
-        
-        let won = (multiplier === winningMult);
-        if(won) {
-            let winAmount = bet * multiplier;
-            balance += winAmount; updateBalanceUI(); showBalanceLog(winAmount); updateStats(true);
-            document.getElementById('wheel-msg').innerText = `WON ${winAmount}$`;
-            document.getElementById('wheel-msg').style.color = "#4CAF50";
-        } else {
-            updateStats(false);
-            document.getElementById('wheel-msg').innerText = "LOST";
-            document.getElementById('wheel-msg').style.color = "#F44336";
-        }
-        wheelSpinning = false; isGameActive = false;
-        wheel.style.transition = 'none'; wheel.style.transform = `rotate(${finalAngle % 360}deg)`;
-        setTimeout(() => { wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)'; }, 50);
-    }, 4000);
 }
 
 /* ================= SLOTS ================= */
