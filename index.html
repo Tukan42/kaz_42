@@ -13,6 +13,14 @@
     <div id="bg-container"></div>
     <div class="overlay"></div>
 
+    <!-- МОДАЛЬНОЕ ОКНО ОШИБКИ (НОВОЕ) -->
+    <div id="error-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeError()">×</span>
+            <div id="error-text">Недостаточно средств</div>
+        </div>
+    </div>
+
     <nav>
         <div class="logo-box" onclick="showMenu()">
             <span class="gold-text">KAZ</span><span class="white-text">42</span>
@@ -35,9 +43,9 @@
         <div class="games-grid">
             <div class="game-card" onclick="openGame('rocket')"><div class="icon">🚀</div><h3>Crash</h3></div>
             <div class="game-card" onclick="openGame('plinko')"><div class="icon">📐</div><h3>Plinko</h3></div>
+            <div class="game-card" onclick="openGame('wheel')"><div class="icon">🎡</div><h3>Wheel</h3></div>
             <div class="game-card" onclick="openGame('mines')"><div class="icon">💣</div><h3>Mines</h3></div>
             <div class="game-card" onclick="openGame('tower')"><div class="icon">🏛️</div><h3>Tower</h3></div>
-            <div class="game-card" onclick="openGame('wheel')"><div class="icon">🎡</div><h3>Wheel</h3></div>
             <div class="game-card" onclick="openGame('diamonds')"><div class="icon">💎</div><h3>Diamonds</h3></div>
             <div class="game-card" onclick="openGame('keno')"><div class="icon">🎫</div><h3>Keno</h3></div>
             <div class="game-card" onclick="openGame('slots')"><div class="icon">🍒</div><h3>Slots</h3></div>
@@ -73,7 +81,7 @@
 
     <!-- ROCKET -->
     <section id="game-rocket" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')" class="active">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
+        <div class="game-nav-bar"><button onclick="openGame('rocket')" class="active">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
         <div class="minimal-panel game-panel">
             <div class="panel-header"><h2>Crash</h2><button class="close-btn" onclick="showMenu()">×</button></div>
             <div class="rocket-field">
@@ -101,7 +109,7 @@
 
     <!-- PLINKO -->
     <section id="game-plinko" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')" class="active">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
+        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')" class="active">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
         <div class="minimal-panel game-panel">
             <div class="panel-header"><h2>Plinko</h2><button class="close-btn" onclick="showMenu()">×</button></div>
             <div class="plinko-wrapper"><div class="plinko-board" id="plinko-board"></div><div class="plinko-multipliers" id="plinko-multipliers"></div></div>
@@ -114,25 +122,40 @@
         </div>
     </section>
 
-    <!-- MINES -->
-    <section id="game-mines" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')" class="active">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
+    <!-- WHEEL -->
+    <section id="game-wheel" class="hidden fade-in">
+        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')" class="active">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
         <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Mines</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div class="mines-info">Win: <span id="mines-potential-win" class="gold-text">0 $</span></div>
-            <div id="mines-grid" class="mines-grid"></div>
+            <div class="panel-header"><h2>Wheel</h2><button class="close-btn" onclick="showMenu()">×</button></div>
+            <div class="wheel-container"><div class="wheel-pointer">▼</div><div id="wheel-circle" class="wheel-circle"></div></div>
+            <div id="wheel-msg" class="status-msg">Select color</div>
             <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-mines" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-mines', 100)">+100</button><button onclick="setMaxBet('bet-mines')" class="btn-max">MAX</button></div></div>
-                <div class="bet-input"><span>BOMBS</span><select id="mines-count-select"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="24">24</option></select></div>
-                <button id="btn-mines-start" class="btn-primary" onclick="startMines()">Play</button>
-                <button id="btn-mines-cashout" class="btn-action hidden" onclick="cashoutMines()">Take</button>
+                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-wheel" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-wheel', 100)">+100</button><button onclick="setMaxBet('bet-wheel')" class="btn-max">MAX</button></div></div>
+                <div class="btn-group"><button class="btn-wheel black" onclick="playWheel(2)">2x</button><button class="btn-wheel red" onclick="playWheel(3)">3x</button><button class="btn-wheel green" onclick="playWheel(5)">5x</button><button class="btn-wheel gold" onclick="playWheel(50)">50x</button></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MINES -->
+    <section id="game-mines" class="hidden fade-in"><div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')" class="active">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div><div class="minimal-panel game-panel"><div class="panel-header"><h2>Mines</h2><button class="close-btn" onclick="showMenu()">×</button></div><div class="mines-info">Win: <span id="mines-potential-win" class="gold-text">0 $</span></div><div id="mines-grid" class="mines-grid"></div><div class="controls-bar"><div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-mines" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-mines', 100)">+100</button><button onclick="setMaxBet('bet-mines')" class="btn-max">MAX</button></div></div><div class="bet-input"><span>BOMBS</span><select id="mines-count-select"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="24">24</option></select></div><button id="btn-mines-start" class="btn-primary" onclick="startMines()">Play</button><button id="btn-mines-cashout" class="btn-action hidden" onclick="cashoutMines()">Take</button></div></div></section>
+    
+    <!-- TOWER -->
+    <section id="game-tower" class="hidden fade-in">
+        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')" class="active">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
+        <div class="minimal-panel game-panel">
+            <div class="panel-header"><h2>Tower</h2><button class="close-btn" onclick="showMenu()">×</button></div>
+            <div class="tower-container"><div class="tower-sidebar"><div class="tower-level active-level">1.5x</div><div class="tower-level">2.3x</div><div class="tower-level">3.5x</div><div class="tower-level">6.0x</div><div class="tower-level top-level">10x</div></div><div id="tower-grid" class="tower-grid"></div></div>
+            <div id="tower-msg" class="status-msg">Climb the tower</div>
+            <div class="controls-bar">
+                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-tower" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-tower', 100)">+100</button><button onclick="setMaxBet('bet-tower')" class="btn-max">MAX</button></div></div>
+                <button id="btn-tower-play" class="btn-primary" onclick="playTower()">Start</button><button id="btn-tower-cashout" class="btn-action hidden" onclick="cashoutTower()">Take</button>
             </div>
         </div>
     </section>
 
     <!-- DIAMONDS -->
     <section id="game-diamonds" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')" class="active">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
+        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')" class="active">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
         <div class="minimal-panel game-panel">
             <div class="panel-header"><h2>Diamonds</h2><button class="close-btn" onclick="showMenu()">×</button></div>
             <div class="payouts"><span id="pay-2" class="payout-item">1.2x (Pair)</span><span id="pay-3" class="payout-item">2x (2P)</span><span id="pay-4" class="payout-item">5x (3)</span><span id="pay-5" class="payout-item">50x (5)</span></div>
@@ -145,124 +168,23 @@
         </div>
     </section>
 
-    <!-- TOWER -->
-    <section id="game-tower" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')" class="active">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
-        <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Tower</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div class="tower-container"><div class="tower-sidebar"><div class="tower-level active-level">1.5x</div><div class="tower-level">2.3x</div><div class="tower-level">3.5x</div><div class="tower-level">6.0x</div><div class="tower-level top-level">10x</div></div><div id="tower-grid" class="tower-grid"></div></div>
-            <div id="tower-msg" class="status-msg">Climb the tower</div>
-            <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-tower" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-tower', 100)">+100</button><button onclick="setMaxBet('bet-tower')" class="btn-max">MAX</button></div></div>
-                <button id="btn-tower-play" class="btn-primary" onclick="playTower()">Start</button><button id="btn-tower-cashout" class="btn-action hidden" onclick="cashoutTower()">Take</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- WHEEL -->
-    <section id="game-wheel" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')" class="active">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
-        <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Wheel</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div class="wheel-container"><div class="wheel-pointer">▼</div><div id="wheel-circle" class="wheel-circle"></div></div>
-            <div id="wheel-msg" class="status-msg">Select color</div>
-            <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-wheel" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-wheel', 100)">+100</button><button onclick="setMaxBet('bet-wheel')" class="btn-max">MAX</button></div></div>
-                <div class="btn-group"><button class="btn-wheel black" onclick="playWheel(2)">2x</button><button class="btn-wheel red" onclick="playWheel(3)">3x</button><button class="btn-wheel green" onclick="playWheel(5)">5x</button><button class="btn-wheel gold" onclick="playWheel(50)">50x</button></div>
-            </div>
-        </div>
-    </section>
-
     <!-- KENO -->
-    <section id="game-keno" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')" class="active">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
-        <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Keno</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div class="keno-info">Selected: <span id="keno-count">0</span>/10</div><div class="keno-grid" id="keno-grid"></div><div id="keno-msg" class="status-msg">Pick numbers</div>
-            <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-keno" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-keno', 100)">+100</button><button onclick="setMaxBet('bet-keno')" class="btn-max">MAX</button></div></div>
-                <button id="btn-keno-play" class="btn-primary" onclick="playKeno()">Bet</button>
-            </div>
-        </div>
-    </section>
-
+    <section id="game-keno" class="hidden fade-in"><div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')" class="active">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div><div class="minimal-panel game-panel"><div class="panel-header"><h2>Keno</h2><button class="close-btn" onclick="showMenu()">×</button></div><div class="keno-info">Selected: <span id="keno-count">0</span>/10</div><div class="keno-grid" id="keno-grid"></div><div id="keno-msg" class="status-msg">Pick numbers</div><div class="controls-bar"><div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-keno" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-keno', 100)">+100</button><button onclick="setMaxBet('bet-keno')" class="btn-max">MAX</button></div></div><button id="btn-keno-play" class="btn-primary" onclick="playKeno()">Bet</button></div></div></section>
+    
     <!-- SLOTS -->
-    <section id="game-slots" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')" class="active">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
-        <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Slots</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div class="slots-machine"><div class="slot-window"><div class="slot-col" id="col1">7️⃣</div></div><div class="slot-window"><div class="slot-col" id="col2">7️⃣</div></div><div class="slot-window"><div class="slot-col" id="col3">7️⃣</div></div><div class="slot-line"></div></div>
-            <div id="slots-result" class="status-msg">Press Spin</div>
-            <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-slots" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-slots', 100)">+100</button><button onclick="setMaxBet('bet-slots')" class="btn-max">MAX</button></div></div>
-                <button id="btn-slots-spin" class="btn-primary" onclick="playSlots()">Spin</button>
-            </div>
-        </div>
-    </section>
-
+    <section id="game-slots" class="hidden fade-in"><div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')" class="active">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div><div class="minimal-panel game-panel"><div class="panel-header"><h2>Slots</h2><button class="close-btn" onclick="showMenu()">×</button></div><div class="slots-machine"><div class="slot-window"><div class="slot-col" id="col1">7️⃣</div></div><div class="slot-window"><div class="slot-col" id="col2">7️⃣</div></div><div class="slot-window"><div class="slot-col" id="col3">7️⃣</div></div><div class="slot-line"></div></div><div id="slots-result" class="status-msg">Press Spin</div><div class="controls-bar"><div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-slots" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-slots', 100)">+100</button><button onclick="setMaxBet('bet-slots')" class="btn-max">MAX</button></div></div><button id="btn-slots-spin" class="btn-primary" onclick="playSlots()">Spin</button></div></div></section>
+    
     <!-- DICE -->
-    <section id="game-dice" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')" class="active">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
-        <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Dice</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div class="scene"><div class="cube" id="dice-cube"><div class="cube__face cube__face--1">1</div><div class="cube__face cube__face--2">2</div><div class="cube__face cube__face--3">3</div><div class="cube__face cube__face--4">4</div><div class="cube__face cube__face--5">5</div><div class="cube__face cube__face--6">6</div></div></div>
-            <div id="dice-msg" class="status-msg">Predict the roll</div>
-            <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-dice" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-dice', 100)">+100</button><button onclick="setMaxBet('bet-dice')" class="btn-max">MAX</button></div></div>
-                <div class="btn-group"><button class="btn-outline dice-btn" onclick="playDice(false)">1-3</button><button class="btn-outline dice-btn" onclick="playDice(true)">4-6</button></div>
-            </div>
-        </div>
-    </section>
-
+    <section id="game-dice" class="hidden fade-in"><div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')" class="active">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div><div class="minimal-panel game-panel"><div class="panel-header"><h2>Dice</h2><button class="close-btn" onclick="showMenu()">×</button></div><div class="scene"><div class="cube" id="dice-cube"><div class="cube__face cube__face--1">1</div><div class="cube__face cube__face--2">2</div><div class="cube__face cube__face--3">3</div><div class="cube__face cube__face--4">4</div><div class="cube__face cube__face--5">5</div><div class="cube__face cube__face--6">6</div></div></div><div id="dice-msg" class="status-msg">Predict the roll</div><div class="controls-bar"><div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-dice" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-dice', 100)">+100</button><button onclick="setMaxBet('bet-dice')" class="btn-max">MAX</button></div></div><div class="btn-group"><button class="btn-outline dice-btn" onclick="playDice(false)">1-3</button><button class="btn-outline dice-btn" onclick="playDice(true)">4-6</button></div></div></div></section>
+    
     <!-- COIN -->
-    <section id="game-coin" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')" class="active">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
-        <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Coin Flip</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div id="coin-wrapper"><div id="coin"><div class="side front">🦅</div><div class="side back">🪙</div></div></div>
-            <div id="coin-msg" class="status-msg">Heads or Tails?</div>
-            <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-coin" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-coin', 100)">+100</button><button onclick="setMaxBet('bet-coin')" class="btn-max">MAX</button></div></div>
-                <div class="btn-group"><button class="btn-gold-coin coin-btn" onclick="playCoin('heads')">Heads</button><button class="btn-silver-coin coin-btn" onclick="playCoin('tails')">Tails</button></div>
-            </div>
-        </div>
-    </section>
-
+    <section id="game-coin" class="hidden fade-in"><div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')" class="active">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')">🃏</button></div><div class="minimal-panel game-panel"><div class="panel-header"><h2>Coin Flip</h2><button class="close-btn" onclick="showMenu()">×</button></div><div id="coin-wrapper"><div id="coin"><div class="side front">🦅</div><div class="side back">🪙</div></div></div><div id="coin-msg" class="status-msg">Heads or Tails?</div><div class="controls-bar"><div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-coin" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-coin', 100)">+100</button><button onclick="setMaxBet('bet-coin')" class="btn-max">MAX</button></div></div><div class="btn-group"><button class="btn-gold-coin coin-btn" onclick="playCoin('heads')">Heads</button><button class="btn-silver-coin coin-btn" onclick="playCoin('tails')">Tails</button></div></div></div></section>
+    
     <!-- LIMBO -->
-    <section id="game-limbo" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')" class="active">🚀</button><button onclick="openGame('hilo')">🃏</button></div>
-        <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Limbo</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div class="limbo-display" id="limbo-result">1.00x</div>
-            <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-limbo" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-limbo', 100)">+100</button><button onclick="setMaxBet('bet-limbo')" class="btn-max">MAX</button></div></div>
-                <div class="bet-input"><span>TARGET</span><input type="number" id="limbo-target" value="2.00" step="0.01"></div>
-                <button id="btn-limbo" class="btn-primary" onclick="playLimbo()">Bet</button>
-            </div>
-        </div>
-    </section>
-
+    <section id="game-limbo" class="hidden fade-in"><div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')" class="active">🚀</button><button onclick="openGame('hilo')">🃏</button></div><div class="minimal-panel game-panel"><div class="panel-header"><h2>Limbo</h2><button class="close-btn" onclick="showMenu()">×</button></div><div class="limbo-display" id="limbo-result">1.00x</div><div class="controls-bar"><div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-limbo" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-limbo', 100)">+100</button><button onclick="setMaxBet('bet-limbo')" class="btn-max">MAX</button></div></div><div class="bet-input"><span>TARGET</span><input type="number" id="limbo-target" value="2.00" step="0.01"></div><button id="btn-limbo" class="btn-primary" onclick="playLimbo()">Bet</button></div></div></section>
+    
     <!-- HI-LO -->
-    <section id="game-hilo" class="hidden fade-in">
-        <div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')" class="active">🃏</button></div>
-        <div class="minimal-panel game-panel">
-            <div class="panel-header"><h2>Hi-Lo</h2><button class="close-btn" onclick="showMenu()">×</button></div>
-            <div class="card-history" id="hilo-history"></div>
-            <div class="card-area"><div id="hilo-card" class="card black">?</div></div>
-            <div class="hilo-status" id="hilo-info">Start game</div>
-            <div class="controls-bar">
-                <div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-hilo" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-hilo', 100)">+100</button><button onclick="setMaxBet('bet-hilo')" class="btn-max">MAX</button></div></div>
-                <button id="btn-hilo-start" class="btn-primary" onclick="startHiLo()">Start</button>
-                <div id="hilo-controls" style="display: none; width: 100%;">
-                    <div class="hilo-btns">
-                        <button class="hilo-btn btn-lo" onclick="guessHiLo('lo')">LOWER <div id="rate-lo" style="font-size:10px; opacity:0.8"></div></button>
-                        <button class="hilo-btn btn-hi" onclick="guessHiLo('hi')">HIGHER <div id="rate-hi" style="font-size:10px; opacity:0.8"></div></button>
-                    </div>
-                    <button class="btn-action full-width" onclick="cashoutHiLo()" style="margin-top:10px">Cashout <span id="hilo-profit"></span></button>
-                </div>
-            </div>
-        </div>
-    </section>
+    <section id="game-hilo" class="hidden fade-in"><div class="game-nav-bar"><button onclick="openGame('rocket')">🚀</button><button onclick="openGame('plinko')">📐</button><button onclick="openGame('wheel')">🎡</button><button onclick="openGame('mines')">💣</button><button onclick="openGame('tower')">🏛️</button><button onclick="openGame('diamonds')">💎</button><button onclick="openGame('keno')">🎫</button><button onclick="openGame('slots')">🍒</button><button onclick="openGame('dice')">🎲</button><button onclick="openGame('coin')">🪙</button><button onclick="openGame('limbo')">🚀</button><button onclick="openGame('hilo')" class="active">🃏</button></div><div class="minimal-panel game-panel"><div class="panel-header"><h2>Hi-Lo</h2><button class="close-btn" onclick="showMenu()">×</button></div><div class="card-history" id="hilo-history"></div><div class="card-area"><div id="hilo-card" class="card black">?</div></div><div class="hilo-status" id="hilo-info">Start game</div><div class="controls-bar"><div class="bet-input-wrapper"><div class="bet-input"><span>BET</span><input type="number" id="bet-hilo" value="100"></div><div class="quick-bets"><button onclick="adjustBet('bet-hilo', 100)">+100</button><button onclick="setMaxBet('bet-hilo')" class="btn-max">MAX</button></div></div><button id="btn-hilo-start" class="btn-primary" onclick="startHiLo()">Start</button><div id="hilo-controls" style="display: none; width: 100%;"><div class="hilo-btns"><button class="hilo-btn btn-lo" onclick="guessHiLo('lo')">LO <span id="rate-lo"></span></button><button class="hilo-btn btn-hi" onclick="guessHiLo('hi')">HI <span id="rate-hi"></span></button></div><button class="btn-action full-width" onclick="cashoutHiLo()" style="margin-top:10px">Cashout <span id="hilo-profit"></span></button></div></div></div></section>
 
     <script src="script.js"></script>
 </body>
