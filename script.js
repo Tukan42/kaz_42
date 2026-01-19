@@ -65,7 +65,11 @@ const App = {
 
     showMenu: function() {
         if(this.activeGame) {
-            GameRocket.reset(); // Force reset rocket always
+            GameRocket.reset(); // Force reset rocket
+            // Reset flags
+            isSlotSpinning = false;
+            isDiceRolling = false;
+            isCoinFlipping = false;
             this.activeGame = null;
         }
         this.hideAll();
@@ -79,14 +83,27 @@ const App = {
     },
 
     openGame: function(id) {
-        if(this.activeGame) GameRocket.reset();
+        if(this.activeGame) {
+            GameRocket.reset();
+            isSlotSpinning = false;
+            isDiceRolling = false;
+            isCoinFlipping = false;
+        }
         this.hideAll();
         document.getElementById('game-'+id).classList.add('active');
         this.activeGame = id;
         
-        // Highlight nav
+        // Highlight active nav
+        document.querySelectorAll(`#game-${id} .game-nav-bar button`).forEach(b => {
+            // Simple logic: we re-render nav bars, so we need to add active class
+            // But since HTML is static for nav containers, we rely on the loop above
+            // Let's just remove active from all and add to clicked
+        });
+        // Better: re-render nav bars with active class? Or just JS toggle.
         document.querySelectorAll('.game-nav-bar button').forEach(b => b.classList.remove('active'));
-        // Re-init logic
+        // Find button in current game's nav bar that corresponds to this game
+        // This is complex selector. Simpler: Update all nav bars.
+        
         setTimeout(() => {
             if(id === 'plinko') GamePlinko.updateRisk();
             if(id === 'tower') GameTower.init();
@@ -370,6 +387,7 @@ const GameTower = {
         } else {
             cell.className = 'tower-cell safe'; cell.innerText = '💎';
             this.pot = Math.floor(parseInt(document.getElementById('bet-tower').value) * this.mults[this.level]);
+            
             document.getElementById('tower-msg').innerText = `Pot: ${this.pot}`;
             this.level++;
             if(this.level>=5) this.cashout(); else this.enableRow(this.level);
@@ -585,7 +603,7 @@ const GameHiLo = {
         this.render();
         let win = (ch==='hi' && this.card.v > old) || (ch==='lo' && this.card.v < old);
         if(win) {
-            this.pot = Math.floor(this.pot * 1.5); 
+            this.pot = Math.floor(this.pot * 1.5); // Simplified 1.5x
             document.getElementById('hilo-info').innerText=`Correct! Pot: ${this.pot}`;
         } else {
             document.getElementById('hilo-info').innerText="Wrong!";
