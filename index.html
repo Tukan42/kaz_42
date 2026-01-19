@@ -10,11 +10,9 @@
 </head>
 <body>
 
-    <!-- BACKGROUND -->
     <div id="bg-container"></div>
     <div class="overlay"></div>
 
-    <!-- NOTIFICATIONS (Закрытие по клику на фон) -->
     <div id="error-modal" class="modal hidden" onclick="if(event.target === this) App.closeError()">
         <div class="modal-content">
             <span class="close-modal" onclick="App.closeError()">×</span>
@@ -22,7 +20,6 @@
         </div>
     </div>
 
-    <!-- NAVIGATION BAR -->
     <nav>
         <div class="logo-box" onclick="App.showMenu()">
             <span class="gold-text">KAZ</span><span class="white-text">42</span>
@@ -39,11 +36,10 @@
         </div>
     </nav>
 
-    <!-- MAIN MENU -->
+    <!-- MENU -->
     <main id="menu-section" class="active fade-in">
         <h1 class="section-title">Lobby</h1>
         <div class="games-grid">
-            <!-- 10 GAMES LEFT -->
             <div class="game-card" onclick="App.openGame('rocket')"><div class="icon">🚀</div><h3>Crash</h3></div>
             <div class="game-card" onclick="App.openGame('plinko')"><div class="icon">📐</div><h3>Plinko</h3></div>
             <div class="game-card" onclick="App.openGame('mines')"><div class="icon">💣</div><h3>Mines</h3></div>
@@ -57,32 +53,22 @@
         </div>
     </main>
 
-    <!-- PROFILE SECTION -->
+    <!-- PROFILE -->
     <section id="profile-section" class="hidden fade-in">
         <div class="minimal-panel profile-panel">
             <div class="panel-header"><h2>Profile</h2></div>
-            <div class="profile-balance-big">
-                <span class="label">Balance</span>
-                <div class="value"><span id="profile-balance-view">1000</span> $</div>
-            </div>
+            <div class="profile-balance-big"><span class="label">Balance</span><div class="value"><span id="profile-balance-view">1000</span> $</div></div>
             <div class="stats-grid">
                 <div class="stat-item"><span class="stat-label">Games</span><span class="stat-val" id="stat-total">0</span></div>
                 <div class="stat-item"><span class="stat-label">Wins</span><span class="stat-val green-text" id="stat-wins">0</span></div>
                 <div class="stat-item"><span class="stat-label">Losses</span><span class="stat-val red-text" id="stat-losses">0</span></div>
             </div>
-            <div class="action-area">
-                <div class="input-group">
-                    <input type="number" id="add-balance-input" placeholder="Amount">
-                    <button class="btn-primary" onclick="App.addBalance()">Deposit</button>
-                </div>
-            </div>
+            <div class="action-area"><div class="input-group"><input type="number" id="add-balance-input" placeholder="Amount"><button class="btn-primary" onclick="App.addBalance()">Deposit</button></div></div>
             <button class="btn-secondary full-width" onclick="App.showMenu()">Back to Lobby</button>
         </div>
     </section>
 
-    <!-- === GAMES === -->
-
-    <!-- ROCKET -->
+    <!-- GAMES -->
     <section id="game-rocket" class="hidden fade-in">
         <div class="game-nav-bar"></div> 
         <div class="minimal-panel game-panel">
@@ -101,7 +87,6 @@
         </div>
     </section>
 
-    <!-- PLINKO -->
     <section id="game-plinko" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
@@ -116,7 +101,6 @@
         </div>
     </section>
 
-    <!-- MINES -->
     <section id="game-mines" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
@@ -132,7 +116,6 @@
         </div>
     </section>
 
-    <!-- TOWER -->
     <section id="game-tower" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
@@ -147,7 +130,6 @@
         </div>
     </section>
 
-    <!-- DIAMONDS -->
     <section id="game-diamonds" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
@@ -162,7 +144,6 @@
         </div>
     </section>
 
-    <!-- SLOTS -->
     <section id="game-slots" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
@@ -176,7 +157,6 @@
         </div>
     </section>
 
-    <!-- DICE -->
     <section id="game-dice" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
@@ -190,7 +170,6 @@
         </div>
     </section>
 
-    <!-- COIN -->
     <section id="game-coin" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
@@ -204,7 +183,6 @@
         </div>
     </section>
 
-    <!-- LIMBO -->
     <section id="game-limbo" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
@@ -218,7 +196,6 @@
         </div>
     </section>
 
-    <!-- HI-LO -->
     <section id="game-hilo" class="hidden fade-in">
         <div class="game-nav-bar"></div>
         <div class="minimal-panel game-panel">
